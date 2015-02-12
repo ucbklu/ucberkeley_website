@@ -1,0 +1,4 @@
+name = UC Berkeley Website
+description = Forms for creating UC Berkeley websites
+package = UC Berkeley
+core = 7.x
