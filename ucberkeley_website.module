@@ -6,6 +6,7 @@
  */
 
 define('TERMINUS_PATH', 'sites/all/libraries');
+//TODO: When the settings form is configured with cache_dir should run a terminus command to create that dir.
 define('TERMINUS_CACHE_DIR', '/terminus/cache');
 
 function ucberkeley_website_export_terminus_cache_dir() {
@@ -55,7 +56,7 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
   else {
     drupal_set_message("Already connected.");
   }
-  //ucberkeley_website_container_spin_up($form, $form_state);
+  ucberkeley_website_container_spin_up($form, $form_state);
 }
 
 function ucberkeley_website_terminus_auth_check() {
