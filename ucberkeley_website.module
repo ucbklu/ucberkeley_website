@@ -5,18 +5,87 @@
  * TODO: Enter file description here.
  */
 
-
+function ucberkeley_website_export_terminus_cache_dir() {
+  //$terminus_cache_dir = variable_get('file_temporary_path', '/tmp') . "/terminus/cache";
+  $terminus_cache_dir = "/tmp/terminus/cache";
+  return "export TERMINUS_CACHE_DIR=" . $terminus_cache_dir;
+}
 
 /**
  * Implements hook_menu().
  */
 function ucberkeley_website_menu() {
-  $items['example'] = array(
-    'title' => 'Example Page',
-    'page callback' => 'example_page',
+  $items['web-hosting/new-openberkeley-website'] = array(
+    'title' => 'Get a new Open Berkeley Website',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ucberkeley_website_openberkeley_form'),
     'access arguments' => array('access content'),
-    'type' => MENU_SUGGESTED_ITEM,
+    'type' => MENU_NORMAL_ITEM,
   );
 
   return $items;
+}
+
+/**
+ * Form to request a managed openberkeley site
+ *
+ * @return mixed
+ */
+function ucberkeley_website_openberkeley_form() {
+  drupal_set_title(t('Start Building Your Website with Open Berkeley'));
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Spin-up Your Site!'),
+  );
+
+  return $form;
+}
+
+function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
+  if (!ucberkeley_website_terminus_auth_check()) {
+    ucberkeley_website_terminus_authenticate();
+  }
+  else {
+    drupal_set_message("Already connected.");
+  }
+  ucberkeley_website_terminus_site_info();
+}
+
+function ucberkeley_website_terminus_auth_check() {
+  $terminus_auth_whoami_cmd = ucberkeley_website_export_terminus_cache_dir() . " && /Users/bwood/bin/terminus auth whoami";
+  $output = system($terminus_auth_whoami_cmd, $return);
+  drupal_set_message("Login Check: Return = $return. Output = $output");
+  // return will be 0 if you are not logged in, so check output
+  if (trim($output) == "You are not logged in.") {
+    return FALSE;
+  }
+  return TRUE;
+}
+
+function ucberkeley_website_terminus_authenticate() {
+  //TODO: poss to use custom server variables yet?
+  global $conf, $export_terminus_cache;
+  $terminus_authenticate_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . sprintf("/Users/bwood/bin/terminus auth login %s --password='%s'", $conf['ut'], $conf['pt']);
+  $output = system($terminus_authenticate_cmd, $return);
+  //exec($terminus_authenticate_cmd, $output, $return); $output = implode("\n", $output);
+  // $return is 255 on success. Not sure why.  Could it be the ascii art?  It thinks binary data is returned?
+  drupal_set_message("Authenticating: $terminus_authenticate_cmd");
+  drupal_set_message("Authenticating: $output");
+  if (strpos($output, "Logging in as") === FALSE) {
+    drupal_set_message("Authenticating: Failure (return=$return)", "error");
+    return FALSE;
+  }
+  drupal_set_message("Authenticating: Success. (output=$output)");
+}
+
+function ucberkeley_website_terminus_site_info() {
+  global $export_terminus_cache;
+  $terminus_site_info_cmd = ucberkeley_website_export_terminus_cache_dir() . " && /Users/bwood/bin/terminus site info --site=ob7-fresh-012015-bw-02 --nocache";
+  exec($terminus_site_info_cmd, $output, $return);
+  $output = implode("\n", $output);
+  //$output = system($terminus_site_info_cmd, $return);
+  drupal_set_message($terminus_site_info_cmd);
+  drupal_set_message("Site Info Return = $return Output = $output");
+
 }
