@@ -5,10 +5,11 @@
  * TODO: Enter file description here.
  */
 
+define('TERMINUS_PATH', 'sites/all/libraries');
+define('TERMINUS_CACHE_DIR', '/terminus/cache');
+
 function ucberkeley_website_export_terminus_cache_dir() {
-  //$terminus_cache_dir = variable_get('file_temporary_path', '/tmp') . "/terminus/cache";
-  $terminus_cache_dir = "/tmp/terminus/cache";
-  return "export TERMINUS_CACHE_DIR=" . $terminus_cache_dir;
+  return "export TERMINUS_CACHE_DIR=" . variable_get('file_temporary_path', '/tmp') . TERMINUS_CACHE_DIR;
 }
 
 /**
@@ -42,6 +43,11 @@ function ucberkeley_website_openberkeley_form() {
   return $form;
 }
 
+function ucberkeley_website_openberkeley_form_validate($form, &$form_state) {
+  //TODO: do a sites info to ensure that there is not already a site with that name
+  return TRUE;
+}
+
 function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
   if (!ucberkeley_website_terminus_auth_check()) {
     ucberkeley_website_terminus_authenticate();
@@ -49,11 +55,11 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
   else {
     drupal_set_message("Already connected.");
   }
-  ucberkeley_website_terminus_site_info();
+  //ucberkeley_website_container_spin_up($form, $form_state);
 }
 
 function ucberkeley_website_terminus_auth_check() {
-  $terminus_auth_whoami_cmd = ucberkeley_website_export_terminus_cache_dir() . " && /Users/bwood/bin/terminus auth whoami";
+  $terminus_auth_whoami_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH ."/terminus auth whoami";
   $output = system($terminus_auth_whoami_cmd, $return);
   drupal_set_message("Login Check: Return = $return. Output = $output");
   // return will be 0 if you are not logged in, so check output
@@ -66,7 +72,7 @@ function ucberkeley_website_terminus_auth_check() {
 function ucberkeley_website_terminus_authenticate() {
   //TODO: poss to use custom server variables yet?
   global $conf, $export_terminus_cache;
-  $terminus_authenticate_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . sprintf("/Users/bwood/bin/terminus auth login %s --password='%s'", $conf['ut'], $conf['pt']);
+  $terminus_authenticate_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . sprintf("/terminus auth login %s --password='%s'", $conf['ut'], $conf['pt']);
   $output = system($terminus_authenticate_cmd, $return);
   //exec($terminus_authenticate_cmd, $output, $return); $output = implode("\n", $output);
   // $return is 255 on success. Not sure why.  Could it be the ascii art?  It thinks binary data is returned?
@@ -88,4 +94,49 @@ function ucberkeley_website_terminus_site_info() {
   drupal_set_message($terminus_site_info_cmd);
   drupal_set_message("Site Info Return = $return Output = $output");
 
+}
+
+function ucberkeley_website_container_spin_up($form, &$form_state) {
+
+  drupal_set_message("Spinning-up a site");
+  set_time_limit(0); //unlimited. This can take a while.
+
+  $site_name = "spinup-test-bw-01";
+
+  $product_uuid = '87774fa4-b570-4300-a693-1c98b61457cd';
+  $organization_uuid = '430c1947-354f-459a-8755-f38293aef105';
+  $organization_test_uuid = '430c1947-354f-459a-8755-f38293aef105';
+  $organization_test_name = 'uc-berkeley-testing';
+  $organization_name = 'uc-berkeley';
+
+  // By default associate the site with the "UC Berkeley - Testing" organization
+  $terminus_sites_create_cmd = ucberkeley_website_export_terminus_cache_dir() . "&& /Users/bwood/bin/terminus sites create --product=$product_uuid --name=$site_name --label=$site_name --org=$organization_test_uuid";
+  exec($terminus_sites_create_cmd, $output, $return);
+  if ($return !== 0) {
+    drupal_set_message("Error creating container:<br />" . implode("<br />", $output), "error");
+  }
+  unset($output);
+  unset($return);
+
+  //if (!$form_state['values']['test_org']) {
+  if (FALSE) {
+    // Associate the site with the "UC Berkeley" organization
+    // 1/23/15: Temporary procedure: https://wikihub.berkeley.edu/display/drupal/Terminus+v2+CLI#Terminusv2CLI-UsingTerminustocreateanewOpenBerkeley7site
+    $terminus_site_organizations_add_cmd = "terminus site organizations add --site=$site_name --org=$organization_name --nocache";
+    // changing max to 1. i.e. don't try repeatedly.  No longer backgrounding the site create command. Edge cases....
+    exec($terminus_site_organizations_add_cmd, $output, $return);
+    unset($output);
+    unset($return);
+
+    $terminus_site_instrument_cmd = "terminus site instrument --change-to-org=$organization_uuid --site=$site_name --nocache";
+    exec($terminus_site_instrument_cmd, $output, $return);
+    unset($output);
+    unset($return);
+
+    $terminus_site_organizations_remove_cmd = "terminus site organizations remove --site=$site_name --org=$organization_test_uuid --nocache";
+    exec($terminus_site_organizations_remove_cmd, $output, $return);
+    unset($output);
+    unset($return);
+  }
+  drupal_set_message("Spin-up of \"$site_name\" complete.");
 }
