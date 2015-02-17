@@ -88,7 +88,7 @@ function ucberkeley_website_terminus_authenticate() {
 
 function ucberkeley_website_terminus_site_info() {
   global $export_terminus_cache;
-  $terminus_site_info_cmd = ucberkeley_website_export_terminus_cache_dir() . " && /Users/bwood/bin/terminus site info --site=ob7-fresh-012015-bw-02 --nocache";
+  $terminus_site_info_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH ."/terminus site info --site=ob7-fresh-012015-bw-02 --nocache";
   exec($terminus_site_info_cmd, $output, $return);
   $output = implode("\n", $output);
   //$output = system($terminus_site_info_cmd, $return);
@@ -102,7 +102,7 @@ function ucberkeley_website_container_spin_up($form, &$form_state) {
   drupal_set_message("Spinning-up a site");
   set_time_limit(0); //unlimited. This can take a while.
 
-  $site_name = "spinup-test-bw-01";
+  $site_name = "spinup-test-bw-02";
 
   $product_uuid = '87774fa4-b570-4300-a693-1c98b61457cd';
   $organization_uuid = '430c1947-354f-459a-8755-f38293aef105';
@@ -111,7 +111,7 @@ function ucberkeley_website_container_spin_up($form, &$form_state) {
   $organization_name = 'uc-berkeley';
 
   // By default associate the site with the "UC Berkeley - Testing" organization
-  $terminus_sites_create_cmd = ucberkeley_website_export_terminus_cache_dir() . "&& /Users/bwood/bin/terminus sites create --product=$product_uuid --name=$site_name --label=$site_name --org=$organization_test_uuid";
+  $terminus_sites_create_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus sites create --product=$product_uuid --name=$site_name --label=$site_name --org=$organization_test_uuid";
   exec($terminus_sites_create_cmd, $output, $return);
   if ($return !== 0) {
     drupal_set_message("Error creating container:<br />" . implode("<br />", $output), "error");
