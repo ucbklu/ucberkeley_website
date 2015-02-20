@@ -39,9 +39,16 @@ function ucberkeley_website_openberkeley_form() {
   $form['site_name'] = array(
     '#type' => 'textfield',
     '#title' => t('Site Name'),
+    '#description' => "Machine-readable",
     '#size' => 60,
     '#maxlength' => 128,
     '#required' => TRUE,
+  );
+  $form['step'] = array(
+    '#type' => 'radios',
+    '#title' => t('Install Step'),
+    '#default_value' => 0,
+    '#options' => array(t('1: Spin-up container'), t('2: Install drupal')),
   );
   $form['submit'] = array(
     '#type' => 'submit',
@@ -64,9 +71,14 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
     ucberkeley_website_terminus_authenticate();
   }
 
-  //ucberkeley_website_container_spin_up($form_state);
-  //ucberkeley_website_add_team($form_state);
-  ucberkeley_website_install_ob($form_state);
+  if ($form_state['values']['step'] == 0) {
+    ucberkeley_website_container_spin_up($form_state);
+    ucberkeley_website_add_team($form_state);
+    drupal_set_message("Now install install_ucb.php and resubmit this form with the same Site Name (" . $form_state['values']['site_name'] . ")");
+  }
+  if ($form_state['values']['step'] == 1) {
+    ucberkeley_website_install_ob($form_state);
+  }
   //logout?
 }
 
