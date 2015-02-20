@@ -168,14 +168,8 @@ function ucberkeley_website_container_spin_up($form_state) {
 }
 
 function ucberkeley_website_add_team($form_state) {
-  //TODO: administrators should be site variable
-  $administrators = array(
-    'bwood@berkeley.edu' => 213108,
-    //'klu@berkeley.edu' => 304629,
-    //'cboyden@berkeley.edu' => 248324,
-    //'annagaz@berkeley.edu' => 267087
-  );
 
+  $administrators = variable_get('ucberkeley_website_administrators', array());
   foreach (array_keys($administrators) as $email) {
     //0.3.4 -it's broken in this version
     //$terminus_site_team_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus site team add --site=" . $form_state['values']['site_name'] . " --member=$email --nocache";
@@ -204,6 +198,7 @@ function ucberkeley_website_install_ob($form_state) {
   drupal_set_message("Site-install return=$return output:<br />" . implode("<br />", $output));
   */
 
+  $administrators = variable_get('ucberkeley_website_administrators', array());
   drupal_set_message("Installing Open Berkeley");
   $url = "http://dev-" . $form_state['values']['site_name'] . ".pantheon.berkeley.edu/";
   $request = "profile=openberkeley&locale=en&op=start&id=1";
@@ -213,7 +208,7 @@ function ucberkeley_website_install_ob($form_state) {
   $request .= "&forms[install_configure_form][account][mail]=" . urlencode('bwood+01@berkeley.edu');
   $request .= "&forms[install_configure_form][account][pass]=" . urlencode('t');
   $request .= "&forms[install_configure_form][update_status_module]=" . urlencode('array(FALSE,FALSE)');
-  $request .= "&forms[openberkeley_add_admin_form][cas_name]=" . urlencode('213108');
+  $request .= "&forms[openberkeley_add_admin_form][cas_name]=" . urlencode(implode(',', array_values($administrators)));
   $request .= "&forms[panopoly_theme_selection_form][theme]=" . urlencode('berkeley');
   $url_request = $url . "install_ucb.php?" . $request;
   drupal_set_message($url_request);
@@ -223,13 +218,15 @@ function ucberkeley_website_install_ob($form_state) {
     //'headers' => array('Content-Type' => 'text/html'),
     'timeout' => 30 // bumping this to 300 seems to cause an internal server error on Pantheon. Just let it timeout.
   );
+
+
   $response = drupal_http_request($url_request, $options);
 
-  /* let it time out
-  if ((isset($response->error)) && (!empty($response->error))) {
-    drupal_set_message("Error (" . $response->code . ") " . $response->error, "error");
-  }
-  */
+  //let it time out
+  //if ((isset($response->error)) && (!empty($response->error))) {
+  //  drupal_set_message("Error (" . $response->code . ") " . $response->error, "error");
+  //}
+
   // Allow installation to finish
   sleep(120);
   // Check the site.
