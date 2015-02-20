@@ -58,17 +58,20 @@ function ucberkeley_website_openberkeley_form_validate($form, &$form_state) {
 }
 
 function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
+  set_time_limit(0); //unlimited. This can take a while.
+
   if (!ucberkeley_website_terminus_auth_check()) {
-    //ucberkeley_website_terminus_authenticate();
+    ucberkeley_website_terminus_authenticate();
   }
-  ucberkeley_website_terminus_authenticate();
+
   //ucberkeley_website_container_spin_up($form_state);
-  ucberkeley_website_add_team($form_state);
-  //ucberkeley_website_install_ob($form_state);
+  //ucberkeley_website_add_team($form_state);
+  ucberkeley_website_install_ob($form_state);
+  //logout?
 }
 
 function ucberkeley_website_terminus_auth_check() {
-  $terminus_auth_whoami_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH ."/terminus auth whoami";
+  $terminus_auth_whoami_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus auth whoami";
   $output = system($terminus_auth_whoami_cmd, $return);
   //drupal_set_message("Login Check: Return = $return. Output = $output");
   // return will be 0 if you are not logged in, so check output
@@ -85,7 +88,8 @@ function ucberkeley_website_terminus_authenticate() {
   //TODO: poss to use custom server variables yet?
   global $conf, $export_terminus_cache;
   $terminus_authenticate_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . sprintf("/terminus auth login %s --password='%s'", $conf['ut'], $conf['pt']);
-  exec($terminus_authenticate_cmd, $output, $return); $output = implode("\n", $output);
+  exec($terminus_authenticate_cmd, $output, $return);
+  $output = implode("\n", $output);
   //TODO: Make these next two watchdog
   //drupal_set_message("Authenticating: $terminus_authenticate_cmd");
   if (strpos($output, "Logging in as") === FALSE) {
@@ -97,7 +101,7 @@ function ucberkeley_website_terminus_authenticate() {
 
 function ucberkeley_website_terminus_site_info() {
   global $export_terminus_cache;
-  $terminus_site_info_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH ."/terminus site info --site=ob7-fresh-012015-bw-02 --nocache";
+  $terminus_site_info_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus site info --site=ob7-fresh-012015-bw-02 --nocache";
   exec($terminus_site_info_cmd, $output, $return);
   $output = implode("\n", $output);
   //$output = system($terminus_site_info_cmd, $return);
@@ -109,7 +113,6 @@ function ucberkeley_website_terminus_site_info() {
 function ucberkeley_website_container_spin_up($form_state) {
 
   drupal_set_message("Spinning-up a site");
-  set_time_limit(0); //unlimited. This can take a while.
 
   $product_uuid = '87774fa4-b570-4300-a693-1c98b61457cd';
   $organization_uuid = '430c1947-354f-459a-8755-f38293aef105';
@@ -121,6 +124,7 @@ function ucberkeley_website_container_spin_up($form_state) {
 
   // By default associate the site with the "UC Berkeley - Testing" organization
   $terminus_sites_create_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus sites create --product=$product_uuid --name=$site_name --label=$site_name --org=$organization_test_uuid";
+  drupal_set_message($terminus_sites_create_cmd);
   exec($terminus_sites_create_cmd, $output, $return);
   if ($return !== 0) {
     drupal_set_message("Error creating container:<br />" . implode("<br />", $output), "error");
@@ -161,8 +165,11 @@ function ucberkeley_website_add_team($form_state) {
   );
 
   foreach (array_keys($administrators) as $email) {
+    //0.3.4 -it's broken in this version
+    //$terminus_site_team_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus site team add --site=" . $form_state['values']['site_name'] . " --member=$email --nocache";
     // requires 0.4-beta
-    $terminus_site_team_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus site team add-member --site=" . $form_state['values']['site_name'] . " --member=$email";
+    $terminus_site_team_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus04b site team add-member --site=" . $form_state['values']['site_name'] . " --member=$email --nocache";
+
     exec($terminus_site_team_cmd, $output, $return);
     drupal_set_message($terminus_site_team_cmd);
     if ($return !== 0) {
@@ -174,12 +181,56 @@ function ucberkeley_website_add_team($form_state) {
 
 function ucberkeley_website_install_ob($form_state) {
   // The terminus drush wrapper fails: https://github.com/pantheon-systems/cli/issues/141
-  $terminus_drush_site_install_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus ";
-  //$drush_site_install_cmd = "/usr/bin/php /Users/bwood/bin/drush/drush-6.3.0/drush.php --strict=0 @pantheon." . $form_state['values']['site_name'] . ".dev site-install openberkeley --site-mail=bwood+01@berkeley.edu --site-name=\"Spin-up Test\" --account-mail=bwood+01@berkeley.edu --account-name=ucbadmin update_status_module=\"array\(FALSE,FALSE\)\" openberkeley_add_admin_form.cas_name=213108,304629,248324,267087 --account-mail=bwood+01@berkeley.edu";
-  $drush_site_install_cmd = "export PATH=\$PATH:/usr/bin && /Users/bwood/bin/drush/drush --strict=0 @pantheon." . $form_state['values']['site_name'] . ".dev site-install openberkeley --site-mail=bwood+01@berkeley.edu --site-name=\"Spin-up Test\" --account-mail=bwood+01@berkeley.edu --account-name=ucbadmin update_status_module=\"array\(FALSE,FALSE\)\" openberkeley_add_admin_form.cas_name=213108,304629,248324,267087 --account-mail=bwood+01@berkeley.edu";
+  //$terminus_drush_site_install_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus ";
+
+
+  /* Calling drush here is sketchy and would require aliases download etc
+  $drush_site_install_cmd = "/usr/bin/php /Users/bwood/bin/drush/drush-6.3.0/drush.php --strict=0 @pantheon." . $form_state['values']['site_name'] . ".dev site-install openberkeley --site-mail=bwood+01@berkeley.edu --site-name=\"Spin-up Test\" --account-mail=bwood+01@berkeley.edu --account-name=ucbadmin update_status_module=\"array\(FALSE,FALSE\)\" openberkeley_add_admin_form.cas_name=213108,304629,248324,267087 --account-mail=bwood+01@berkeley.edu";
+  $drush_site_install_cmd = "sites/all/libraries/site-install @pantheon." . $form_state['values']['site_name'] . ".dev 2>&1";
   drupal_set_message($drush_site_install_cmd);
   exec($drush_site_install_cmd, $output, $return);
   drupal_set_message("Site-install return=$return output:<br />" . implode("<br />", $output));
+  */
+
+  drupal_set_message("Installing Open Berkeley");
+  $url = "http://dev-" . $form_state['values']['site_name'] . ".pantheon.berkeley.edu/";
+  $request = "profile=openberkeley&locale=en&op=start&id=1";
+  $request .= "&forms[install_configure_form][site_name]=" . urlencode('Auto Spin-up');
+  $request .= "&forms[install_configure_form][site_mail]=" . urlencode('bwood+01@berkeley.edu');
+  $request .= "&forms[install_configure_form][account][name]=" . urlencode('ucbadmin');
+  $request .= "&forms[install_configure_form][account][mail]=" . urlencode('bwood+01@berkeley.edu');
+  $request .= "&forms[install_configure_form][account][pass]=" . urlencode('t');
+  $request .= "&forms[install_configure_form][update_status_module]=" . urlencode('array(FALSE,FALSE)');
+  $request .= "&forms[openberkeley_add_admin_form][cas_name]=" . urlencode('213108');
+  $request .= "&forms[panopoly_theme_selection_form][theme]=" . urlencode('berkeley');
+  $url_request = $url . "install_ucb.php?" . $request;
+  drupal_set_message($url_request);
+  $options = array(
+    //'method' => 'GET',
+    //'data' => $request,
+    //'headers' => array('Content-Type' => 'text/html'),
+    'timeout' => 30 // bumping this to 300 seems to cause an internal server error on Pantheon. Just let it timeout.
+  );
+  $response = drupal_http_request($url_request, $options);
+
+  /* let it time out
+  if ((isset($response->error)) && (!empty($response->error))) {
+    drupal_set_message("Error (" . $response->code . ") " . $response->error, "error");
+  }
+  */
+  // Allow installation to finish
+  sleep(120);
+  // Check the site.
+  $test = drupal_http_request($url);
+  if (($test->code == 200) || ($test->code == 301) || ($test->code == 302)) {
+    drupal_set_message("Your site is ready at " . l($url, $url, array('attributes' => array('target' => "_new"))));
+  }
+  else {
+    drupal_set_message("Your site didn't return a normal status. Check it out at " . l($url, $url, array('attributes' => array('target' => "_new"))), "warning");
+  }
+  //drupal_set_message(var_dump($response));
+
+
 }
 
 // deploy to test and live
