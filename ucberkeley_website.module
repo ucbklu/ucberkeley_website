@@ -28,6 +28,7 @@ function ucberkeley_website_menu() {
   return $items;
 }
 
+
 /**
  * Form to request a managed openberkeley site
  *
@@ -36,14 +37,299 @@ function ucberkeley_website_menu() {
 function ucberkeley_website_openberkeley_form() {
   drupal_set_title(t('Start Building Your Website with Open Berkeley'));
 
-  $form['site_name'] = array(
+  $agree_yes = "I agree";
+  $agree_no = "I do not agree";
+
+  $form['mou'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Memorandum of Understanding'),
+    '#description' => t(''),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  $form['mou']['mou_link'] = array(
+    '#markup' => '<div>' . l(t("Read our Memorandum of Understanding(MOU)"), "") . '.</div>',
+  );
+  $form['mou']['mou_agree'] = array(
+    '#type' => 'radios',
+    '#required' => TRUE,
+    '#title' => t('Do you agree with our Memorandum of Understanding (MOU)?'),
+    '#description' => "",
+    '#default_value' => 0,
+    '#options' => array(t($agree_no), t($agree_yes)),
+  );
+
+  $form['website_info'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Website Information'),
+    '#description' => t(''),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  $form['website_info']['site_name'] = array(
     '#type' => 'textfield',
     '#title' => t('Site Name'),
-    '#description' => "Machine-readable",
+    '#description' => "",
     '#size' => 60,
     '#maxlength' => 128,
     '#required' => TRUE,
   );
+  $form['website_info']['site_short_name'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Site Short Name'),
+    '#description' => t('This name should contain only lower case letters, numbers and dashes. (Spaces are not allowed.) This will be used in the url of the test version of your site. For example your Site Name might be "My Very Important Site" but you may want your Site Short Name to be "my-site".'),
+    '#default_value' => "",
+  );
+  $form['website_info']['live_url'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('Anticipated Live URL'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['website_info']['site_email'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Site Email'),
+    '#description' => t('Preferred: Departmental or other generic email address'),
+    '#default_value' => "",
+  );
+  $form['website_info']['parent_org'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('Parent Organization (if applicable)'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['people'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('People'),
+    '#description' => t(''),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  $form['people']['functional_owner'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Functional Site Owner'),
+    '#description' => t(''),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  $form['people']['functional_owner']['functional_owner_markup'] = array(
+    '#markup' => '<div>' . "The functional owner is the primary decision-maker for your website. This section is optional if the Functional Site
+Owner is the same person who will be listed as the primary Site Builder (see below)." . '</div>',
+  );
+  $form['people']['functional_owner']['functional_owner_name'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('Name'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['people']['functional_owner']['functional_owner_name'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('Name'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['people']['functional_owner']['functional_owner_email'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('Email'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['people']['site_builders'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Site Builders'),
+    '#description' => t(''),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  $form['people']['site_builders']['site_builders_markup'] = array(
+    '#markup' => '<div>' . "<p>Site Builders can edit and create content, manage menus and categories, add and edit redirects, change page layouts and use panels, and more. This role is the most advanced role available on Open Berkeley sites. Please ensure that anyone with Site Builder role attends a " . l(t("Site Builder training"), "https://wikihub.berkeley.edu/display/drupal/Training") . ".</p>
+<p>Please add the person who will serve as this website's initial primary Site Builder. If this person has not yet attended a Site Builder training, they should have plans to do so before starting work on your website. This Site Builder may add additional users to your website at any time. Any additional Site Builders should also attend trainings.</p>" . '</div>',
+  );
+  $form['people']['site_builders']['site_builder_name'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Name'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['people']['site_builders']['site_builder_uid'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('UID'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+
+  $form['people']['editors'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Editors'),
+    '#description' => t(''),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  $form['people']['editors']['editors_markup'] = array(
+    '#markup' => '<div>' . "Editors can edit and create content, as well as edit files. " . '</div>',
+  );
+  $form['people']['editors']['editor_name'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('Name'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['people']['editors']['editor_uid'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('UID'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+
+  $form['people']['contributors'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Contributors'),
+    '#description' => t(''),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  $form['people']['contributors']['contributors_markup'] = array(
+    '#markup' => '<div>' . "Contributors can create and edit their own content, and cannot edit content created by others." . '</div>',
+  );
+  $form['people']['contributors']['contributor_name'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('Name'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['people']['contributors']['contributor_uid'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('UID'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+
+  $form['billing_hosting'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Billing/Hosting Information'),
+    '#description' => t(''),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+
+  $field['billing_hosting']['billing_name'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Billing Contact Name'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $field['billing_hosting']['billing_email'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Billing Contact Email'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+
+  $form['billing_hosting']['hosting_plan'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Hosting Plan'),
+    '#description' => t(''),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  $form['billing_hosting']['hosting_plan']['hosting_plan_markup'] = array(
+    '#markup' => '<div>' . "Open Berkeley websites are hosted on Pantheon, an external hosting service. For a breakdown of available hosting plans, please see " . l(t("Pantheon Hosting"),"") . '.</div>',
+  );
+  $form['billing_hosting']['hosting_plan']['plan'] = array(
+    '#type' => 'radios',
+    '#required' => TRUE,
+    '#title' => t('Select a hosting plan'),
+    '#description' => t(''),
+    '#default_value' => "",
+    '#options' => array("Personal Plan ($20/month)", "Professional Plan ($75/month)", "Business Plan ($300/month)"),
+  );
+  $form['billing_hosting']['hosting_plan']['note_markup'] = array(
+    '#markup' => '<div>' . "Note: If the Enterprise Plan is desired, please contact Pantheon to determine scope and pricing." . '</div>',
+  );
+
+
+  $form['billing_hosting']['coa'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Chart of Accounts'),
+    '#description' => t(''),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  $form['billing_hosting']['coa']['business_unit'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Business Unit'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['billing_hosting']['coa']['account'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Account'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['billing_hosting']['coa']['fund'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Fund Code'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['billing_hosting']['coa']['department'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Department (Organization)'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['billing_hosting']['coa']['program'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Program'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['billing_hosting']['coa']['chart1'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Chartfield 1 (Project)'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+  $form['billing_hosting']['coa']['chart2'] = array(
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#title' => t('Chartfield 2 (Project)'),
+    '#description' => t(''),
+    '#default_value' => "",
+  );
+
   $form['step'] = array(
     '#type' => 'radios',
     '#title' => t('Install Step'),
