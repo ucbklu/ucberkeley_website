@@ -49,12 +49,12 @@ function ucberkeley_website_openberkeley_form() {
     '#collapsed' => FALSE,
   );
   $form['mou']['mou_link'] = array(
-    '#markup' => '<div>' . l(t("Read our Memorandum of Understanding(MOU)"), "") . '.</div>',
+    '#markup' => '<br /><div><strong>' . l(t("Read our Memorandum of Understanding (MOU)"), "web-hosting/MOU-TOS/managed", array('attributes' => array('target' => "_new"))) . '</strong>.</div>'
   );
   $form['mou']['mou_agree'] = array(
     '#type' => 'radios',
-    '#required' => TRUE,
-    '#title' => t('Do you agree with our Memorandum of Understanding (MOU)?'),
+    '#required' => FALSE,
+    '#title' => t('Do you agree with our MOU?'),
     '#description' => "",
     '#default_value' => 0,
     '#options' => array(t($agree_no), t($agree_yes)),
@@ -74,11 +74,11 @@ function ucberkeley_website_openberkeley_form() {
     '#description' => "",
     '#size' => 60,
     '#maxlength' => 128,
-    '#required' => TRUE,
+    '#required' => FALSE,
   );
   $form['website_info']['site_short_name'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Site Short Name'),
     '#description' => t('This name should contain only lower case letters, numbers and dashes. (Spaces are not allowed.) This will be used in the url of the test version of your site. For example your Site Name might be "My Very Important Site" but you may want your Site Short Name to be "my-site".'),
     '#default_value' => "",
@@ -92,7 +92,7 @@ function ucberkeley_website_openberkeley_form() {
   );
   $form['website_info']['site_email'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Site Email'),
     '#description' => t('Preferred: Departmental or other generic email address'),
     '#default_value' => "",
@@ -130,13 +130,8 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#title' => t('Name'),
     '#description' => t(''),
     '#default_value' => "",
-  );
-  $form['people']['functional_owner']['functional_owner_name'] = array(
-    '#type' => 'textfield',
-    '#required' => FALSE,
-    '#title' => t('Name'),
-    '#description' => t(''),
-    '#default_value' => "",
+    '#prefix' => '<div class="container-inline">',
+    '#size' => 25,
   );
   $form['people']['functional_owner']['functional_owner_email'] = array(
     '#type' => 'textfield',
@@ -144,6 +139,8 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#title' => t('Email'),
     '#description' => t(''),
     '#default_value' => "",
+    '#suffix' => '</div>',
+    '#size' => 25,
   );
   $form['people']['site_builders'] = array(
     '#type' => 'fieldset',
@@ -159,17 +156,23 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
   );
   $form['people']['site_builders']['site_builder_name'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Name'),
     '#description' => t(''),
     '#default_value' => "",
+    '#prefix' => '<div class="container-inline">',
+    '#size' => 25,
+
   );
   $form['people']['site_builders']['site_builder_uid'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('UID'),
     '#description' => t(''),
     '#default_value' => "",
+    '#suffix' => '</div>',
+    '#size' => 25,
+
   );
 
   $form['people']['editors'] = array(
@@ -189,6 +192,9 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#title' => t('Name'),
     '#description' => t(''),
     '#default_value' => "",
+    '#prefix' => '<div class="container-inline">',
+    '#size' => 25,
+
   );
   $form['people']['editors']['editor_uid'] = array(
     '#type' => 'textfield',
@@ -196,6 +202,9 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#title' => t('UID'),
     '#description' => t(''),
     '#default_value' => "",
+    '#suffix' => '</div>',
+    '#size' => 25,
+
   );
 
   $form['people']['contributors'] = array(
@@ -215,6 +224,8 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#title' => t('Name'),
     '#description' => t(''),
     '#default_value' => "",
+    '#prefix' => '<div class="container-inline">',
+    '#size' => 25,
   );
   $form['people']['contributors']['contributor_uid'] = array(
     '#type' => 'textfield',
@@ -222,6 +233,8 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#title' => t('UID'),
     '#description' => t(''),
     '#default_value' => "",
+    '#prefix' => '</div>',
+    '#size' => 25,
   );
 
   $form['billing_hosting'] = array(
@@ -233,19 +246,35 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#collapsed' => FALSE,
   );
 
-  $field['billing_hosting']['billing_name'] = array(
+  $form['billing_hosting']['billing_contact'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Billing Contact'),
+    '#description' => t(''),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+
+  $form['billing_hosting']['billing_contact']['name'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Billing Contact Name'),
     '#description' => t(''),
     '#default_value' => "",
+    '#prefix' => '<div class="container-inline">',
+    '#size' => 25,
+
   );
-  $field['billing_hosting']['billing_email'] = array(
+
+  $form['billing_hosting']['billing_contact']['email'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Billing Contact Email'),
     '#description' => t(''),
     '#default_value' => "",
+    '#suffix' => '</div>',
+    '#size' => 25,
+
   );
 
   $form['billing_hosting']['hosting_plan'] = array(
@@ -261,7 +290,7 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
   );
   $form['billing_hosting']['hosting_plan']['plan'] = array(
     '#type' => 'radios',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Select a hosting plan'),
     '#description' => t(''),
     '#default_value' => "",
@@ -282,49 +311,49 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
   );
   $form['billing_hosting']['coa']['business_unit'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Business Unit'),
     '#description' => t(''),
     '#default_value' => "",
   );
   $form['billing_hosting']['coa']['account'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Account'),
     '#description' => t(''),
     '#default_value' => "",
   );
   $form['billing_hosting']['coa']['fund'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Fund Code'),
     '#description' => t(''),
     '#default_value' => "",
   );
   $form['billing_hosting']['coa']['department'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Department (Organization)'),
     '#description' => t(''),
     '#default_value' => "",
   );
   $form['billing_hosting']['coa']['program'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Program'),
     '#description' => t(''),
     '#default_value' => "",
   );
   $form['billing_hosting']['coa']['chart1'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Chartfield 1 (Project)'),
     '#description' => t(''),
     '#default_value' => "",
   );
   $form['billing_hosting']['coa']['chart2'] = array(
     '#type' => 'textfield',
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => t('Chartfield 2 (Project)'),
     '#description' => t(''),
     '#default_value' => "",
@@ -338,7 +367,7 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
   );
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Spin-up Your Site!'),
+    '#value' => t('Start Building Your Website with Open Berkeley!'),
   );
 
   return $form;
