@@ -17,12 +17,14 @@ function ucberkeley_website_export_terminus_cache_dir() {
  * Implements hook_menu().
  */
 function ucberkeley_website_menu() {
-  $items['web-hosting/new-openberkeley-website'] = array(
+  $items['web-hosting/get-open-berkeley'] = array(
     'title' => 'Get a new Open Berkeley Website',
+    'description' => 'Create a new Open Berkeley Website',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('ucberkeley_website_openberkeley_form'),
     'access arguments' => array('access content'),
-    'type' => MENU_NORMAL_ITEM,
+    'menu_name' => 'main-menu',
+    'plid' => 2283,
   );
 
   return $items;
