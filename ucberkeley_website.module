@@ -34,7 +34,7 @@ function ucberkeley_website_menu() {
  *
  * @return mixed
  */
-function ucberkeley_website_openberkeley_form() {
+function ucberkeley_website_openberkeley_form($form, &$form_state) {
   drupal_set_title(t('Start Building Your Website with Open Berkeley'));
 
   $agree_yes = "I agree";
@@ -139,22 +139,73 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#title' => t('Email'),
     '#description' => t(''),
     '#default_value' => "",
-    '#suffix' => '</div>',
     '#size' => 25,
+    '#suffix' => '</div>',
   );
+
   $form['people']['site_builders'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
     '#title' => t('Site Builders'),
-    '#description' => t(''),
+    '#description' => t("Site Builders can edit and create content, manage menus and categories, add and edit redirects, change page layouts and use panels, and more. This role is the most advanced role available on Open Berkeley sites. Please ensure that anyone with Site Builder role attends a " . l(t("Site Builder training"), "https://wikihub.berkeley.edu/display/drupal/Training") . ".<p>Please add the person who will serve as this website's initial primary Site Builder. If this person has not yet attended a Site Builder training, they should have plans to do so before starting work on your website. This Site Builder may add additional users to your website at any time. Any additional Site Builders should also attend trainings.</p>"),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
   );
+  /*
   $form['people']['site_builders']['site_builders_markup'] = array(
     '#markup' => '<div>' . "<p>Site Builders can edit and create content, manage menus and categories, add and edit redirects, change page layouts and use panels, and more. This role is the most advanced role available on Open Berkeley sites. Please ensure that anyone with Site Builder role attends a " . l(t("Site Builder training"), "https://wikihub.berkeley.edu/display/drupal/Training") . ".</p>
 <p>Please add the person who will serve as this website's initial primary Site Builder. If this person has not yet attended a Site Builder training, they should have plans to do so before starting work on your website. This Site Builder may add additional users to your website at any time. Any additional Site Builders should also attend trainings.</p>" . '</div>',
   );
-  $form['people']['site_builders']['site_builder_name'] = array(
+  */
+
+  $form_state['storage']['site_builders_number'] = isset($form_state['storage']['site_builders_number']) ? $form_state['storage']['site_builders_number'] : 1;
+
+  $form['people']['site_builders']['site_builder_container'] = array(
+    '#type' => 'container',
+    '#tree' => TRUE,
+    '#prefix' => '<div id="site_builders">',
+    '#suffix' => '</div>',
+  );
+
+  if ($form_state['storage']['site_builders_number']) {
+    for ($i = 1; $i <= $form_state['storage']['site_builders_number']; $i++) {
+      $form['people']['site_builders']['site_builder_container'][$i] = array(
+        '#type' => 'fieldset',
+        '#tree' => TRUE,
+      );
+
+      $form['people']['site_builders']['site_builder_container'][$i]['site_builder_name'] = array(
+        '#type' => 'textfield',
+        '#required' => FALSE,
+        '#title' => t('Name'),
+        '#description' => t(''),
+        '#default_value' => "",
+        '#prefix' => '<div class="container-inline">',
+        '#size' => 25,
+      );
+      $form['people']['site_builders']['site_builder_container'][$i]['site_builder_uid'] = array(
+        '#type' => 'textfield',
+        '#required' => FALSE,
+        '#title' => t('UID'),
+        '#description' => t(''),
+        '#default_value' => "",
+        '#size' => 25,
+        '#suffix' => '</div>',
+      );
+    }
+  }
+  $form['people']['site_builders']['add_site_builder'] = array(
+    '#type' => 'button',
+    '#value' => t('Add another Site Builder'),
+    '#href' => '',
+    '#ajax' => array(
+      'callback' => 'ucberkeley_website_ajax_add_row',
+      'wrapper' => 'site_builders',
+    ),
+  );
+
+  /*
+  $form['people']['site_builders']['site_builder_container']['site_builder_name'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
     '#title' => t('Name'),
@@ -164,16 +215,16 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#size' => 25,
 
   );
-  $form['people']['site_builders']['site_builder_uid'] = array(
+  $form['people']['site_builders']['site_builder_container']['site_builder_uid'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
     '#title' => t('UID'),
     '#description' => t(''),
     '#default_value' => "",
-    '#suffix' => '</div>',
     '#size' => 25,
 
   );
+  */
 
   $form['people']['editors'] = array(
     '#type' => 'fieldset',
@@ -286,7 +337,7 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#collapsed' => FALSE,
   );
   $form['billing_hosting']['hosting_plan']['hosting_plan_markup'] = array(
-    '#markup' => '<div>' . "Open Berkeley websites are hosted on Pantheon, an external hosting service. For a breakdown of available hosting plans, please see " . l(t("Pantheon Hosting"),"") . '.</div>',
+    '#markup' => '<div>' . "Open Berkeley websites are hosted on Pantheon, an external hosting service. For a breakdown of available hosting plans, please see " . l(t("Pantheon Hosting"), "") . '.</div>',
   );
   $form['billing_hosting']['hosting_plan']['plan'] = array(
     '#type' => 'radios',
@@ -370,6 +421,7 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#value' => t('Start Building Your Website with Open Berkeley!'),
   );
 
+  $form_state['storage']['site_builders_number']++;
   return $form;
 }
 
@@ -377,6 +429,10 @@ function ucberkeley_website_openberkeley_form_validate($form, &$form_state) {
   //TODO: check_plain user input!
   //TODO: do a sites info to ensure that there is not already a site with that name
   return TRUE;
+}
+
+function ucberkeley_website_ajax_add_row($form, &$form_state) {
+  return $form['people']['site_builders']['site_builder_container'];
 }
 
 function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
