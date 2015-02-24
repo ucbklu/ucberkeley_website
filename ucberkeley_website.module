@@ -143,6 +143,14 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#suffix' => '</div>',
   );
 
+  // Increment the counter for "add another" fields
+  if (isset($form_state['triggering_element']['#ajax']['wrapper'])) {
+    $type = $form_state['triggering_element']['#ajax']['wrapper'];
+    $form_state['storage'][$type . '_number']++;
+  }
+
+  // *** Site Builders ***
+
   $form['people']['site_builders'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
@@ -151,20 +159,8 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
   );
-  /*
-  $form['people']['site_builders']['site_builders_markup'] = array(
-    '#markup' => '<div>' . "<p>Site Builders can edit and create content, manage menus and categories, add and edit redirects, change page layouts and use panels, and more. This role is the most advanced role available on Open Berkeley sites. Please ensure that anyone with Site Builder role attends a " . l(t("Site Builder training"), "https://wikihub.berkeley.edu/display/drupal/Training") . ".</p>
-<p>Please add the person who will serve as this website's initial primary Site Builder. If this person has not yet attended a Site Builder training, they should have plans to do so before starting work on your website. This Site Builder may add additional users to your website at any time. Any additional Site Builders should also attend trainings.</p>" . '</div>',
-  );
-  */
 
   $form_state['storage']['site_builders_number'] = isset($form_state['storage']['site_builders_number']) ? $form_state['storage']['site_builders_number'] : 1;
-  if (isset($form_state['triggering_element']['#ajax']['wrapper'])) {
-    $type = $form_state['triggering_element']['#ajax']['wrapper'];
-    $form_state['storage'][$type . '_number']++;
-  }
-
-
 
   $form['people']['site_builders']['site_builders_container'] = array(
     '#type' => 'container',
@@ -210,9 +206,8 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     ),
   );
 
-  //$form_state['storage']['site_builders_number']++;
-
   // *** Editors ***
+
   $form['people']['editors'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
@@ -268,37 +263,64 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     ),
   );
 
-  // Contributors
+  // *** Contributors ***
 
   $form['people']['contributors'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#title' => t('Contributors'),
-    '#description' => t(''),
+    '#title' => t('contributors'),
+    '#description' => t('Contributors can create and edit their own content, and cannot edit content created by others.'),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
   );
-  $form['people']['contributors']['contributors_markup'] = array(
-    '#markup' => '<div>' . "Contributors can create and edit their own content, and cannot edit content created by others." . '</div>',
+
+  $form_state['storage']['contributors_number'] = isset($form_state['storage']['contributors_number']) ? $form_state['storage']['contributors_number'] : 1;
+
+  $form['people']['contributors']['contributors_container'] = array(
+    '#type' => 'container',
+    '#tree' => TRUE,
+    '#prefix' => '<div id="contributors">',
+    '#suffix' => '</div>',
   );
-  $form['people']['contributors']['contributor_name'] = array(
-    '#type' => 'textfield',
-    '#required' => FALSE,
-    '#title' => t('Name'),
-    '#description' => t(''),
-    '#default_value' => "",
-    '#prefix' => '<div class="container-inline">',
-    '#size' => 25,
+
+  if ($form_state['storage']['contributors_number']) {
+    for ($i = 1; $i <= $form_state['storage']['contributors_number']; $i++) {
+      $form['people']['contributors']['contributors_container'][$i] = array(
+        '#type' => 'fieldset',
+        '#tree' => TRUE,
+      );
+
+      $form['people']['contributors']['contributors_container'][$i]['contributor_name'] = array(
+        '#type' => 'textfield',
+        '#required' => FALSE,
+        '#title' => t('Name'),
+        '#description' => t(''),
+        '#default_value' => "",
+        '#prefix' => '<div class="container-inline">',
+        '#size' => 25,
+      );
+      $form['people']['contributors']['contributors_container'][$i]['contributor_uid'] = array(
+        '#type' => 'textfield',
+        '#required' => FALSE,
+        '#title' => t('UID'),
+        '#description' => t(''),
+        '#default_value' => "",
+        '#size' => 25,
+        '#suffix' => '</div>',
+      );
+    }
+  }
+  $form['people']['contributors']['add_contributor'] = array(
+    '#type' => 'button',
+    '#value' => t('Add another contributor'),
+    '#href' => '',
+    '#ajax' => array(
+      'callback' => 'ucberkeley_website_ajax_add_row',
+      'wrapper' => 'contributors',
+    ),
   );
-  $form['people']['contributors']['contributor_uid'] = array(
-    '#type' => 'textfield',
-    '#required' => FALSE,
-    '#title' => t('UID'),
-    '#description' => t(''),
-    '#default_value' => "",
-    '#prefix' => '</div>',
-    '#size' => 25,
-  );
+
+  // *** Billing and Hosting ***
 
   $form['billing_hosting'] = array(
     '#type' => 'fieldset',
@@ -442,22 +464,9 @@ function ucberkeley_website_openberkeley_form_validate($form, &$form_state) {
   return TRUE;
 }
 
-function ucberkeley_website_ajax_add_row($form, &$form_state) {
+function ucberkeley_website_ajax_add_row($form, $form_state) {
   $type = $form_state['triggering_element']['#ajax']['wrapper'];
   return $form['people'][$type][$type . '_container'];
-
-  /*
-  switch ($type) {
-    case "site_builders":
-      //return $form['people']['site_builders']['site_builder_container'];
-      $form_state['storage']['site_builders_number']++;
-      break;
-    case "editors":
-
-      break;
-  }
-  */
-
 }
 
 function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
