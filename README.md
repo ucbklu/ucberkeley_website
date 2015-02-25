@@ -1,4 +1,4 @@
 UC Berkeley Website
 ===================
 
-Signup forms for new managed site and DIY customers
+Sign-up form for new managed Open Berkeley site
