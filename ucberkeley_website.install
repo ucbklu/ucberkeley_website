@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function ucberkeley_website_install() {
+  // Administrators can be modified by simply redoing the vset later
+  $administrators = array(
+    'bwood@berkeley.edu' => 213108,
+    'klu@berkeley.edu' => 304629,
+    'cboyden@berkeley.edu' => 248324,
+    'annagaz@berkeley.edu' => 267087
+  );
+  variable_set('ucberkeley_website_administrators', $administrators);
+  drupal_set_message("installing.");
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function ucberkeley_website_uninstall() {
+  variable_del('ucberkeley_website_administrators');
+}
