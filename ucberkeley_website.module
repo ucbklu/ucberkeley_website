@@ -446,12 +446,6 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#default_value' => "",
   );
 
-  $form['step'] = array(
-    '#type' => 'radios',
-    '#title' => t('Install Step'),
-    '#default_value' => 0,
-    '#options' => array(t('1: Spin-up container'), t('2: Install drupal')),
-  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Start Building Your Website with Open Berkeley!'),
@@ -478,19 +472,14 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
     ucberkeley_website_terminus_authenticate();
   }
 
-  if ($form_state['values']['step'] == 0) {
-    ucberkeley_website_container_spin_up($form_state);
-    ucberkeley_website_add_team($form_state);
-    drupal_set_message("Now install install_ucb.php and resubmit this form with the same Site Name (" . $form_state['values']['site_name'] . ")");
-  }
-  if ($form_state['values']['step'] == 1) {
-    ucberkeley_website_install_ob($form_state);
-  }
+  //ucberkeley_website_container_spin_up($form_state);
+  ucberkeley_website_install_ob($form_state);
+
   //logout?
 }
 
 function ucberkeley_website_terminus_auth_check() {
-  $terminus_auth_whoami_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus auth whoami";
+  $terminus_auth_whoami_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b auth whoami";
   $output = system($terminus_auth_whoami_cmd, $return);
   //drupal_set_message("Login Check: Return = $return. Output = $output");
   // return will be 0 if you are not logged in, so check output
@@ -506,7 +495,7 @@ function ucberkeley_website_terminus_auth_check() {
 function ucberkeley_website_terminus_authenticate() {
   //TODO: poss to use custom server variables yet?
   global $conf, $export_terminus_cache;
-  $terminus_authenticate_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . sprintf("/terminus auth login %s --password='%s'", $conf['ut'], $conf['pt']);
+  $terminus_authenticate_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . sprintf("/terminus-034b auth login %s --password='%s'", $conf['ut'], $conf['pt']);
   exec($terminus_authenticate_cmd, $output, $return);
   $output = implode("\n", $output);
   //TODO: Make these next two watchdog
@@ -520,7 +509,7 @@ function ucberkeley_website_terminus_authenticate() {
 
 function ucberkeley_website_terminus_site_info() {
   global $export_terminus_cache;
-  $terminus_site_info_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus site info --site=ob7-fresh-012015-bw-02 --nocache";
+  $terminus_site_info_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b site info --site=ob7-fresh-012015-bw-02 --nocache";
   exec($terminus_site_info_cmd, $output, $return);
   $output = implode("\n", $output);
   //$output = system($terminus_site_info_cmd, $return);
@@ -539,14 +528,14 @@ function ucberkeley_website_container_spin_up($form_state) {
   $organization_test_name = 'uc-berkeley-testing';
   $organization_name = 'uc-berkeley';
 
-  $site_name = $form_state['values']['site_name'];
+  $site_name = $form_state['values']['website_info']['site_name'];
 
   // By default associate the site with the "UC Berkeley - Testing" organization
-  $terminus_sites_create_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus sites create --product=$product_uuid --name=$site_name --label=$site_name --org=$organization_test_uuid";
+  $terminus_sites_create_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b sites create --product=$product_uuid --name=$site_name --label=$site_name --org=$organization_test_uuid";
   drupal_set_message($terminus_sites_create_cmd);
   exec($terminus_sites_create_cmd, $output, $return);
   if ($return !== 0) {
-    drupal_set_message("Error creating container:<br />" . implode("<br />", $output), "error");
+    drupal_set_message("Error creating container. ($return) Output:<br />" . implode("<br />", $output), "error");
   }
   unset($output);
   unset($return);
@@ -555,18 +544,18 @@ function ucberkeley_website_container_spin_up($form_state) {
   if (FALSE) {
     // Associate the site with the "UC Berkeley" organization
     // 1/23/15: Temporary procedure: https://wikihub.berkeley.edu/display/drupal/Terminus+v2+CLI#Terminusv2CLI-UsingTerminustocreateanewOpenBerkeley7site
-    $terminus_site_organizations_add_cmd = "terminus site organizations add --site=$site_name --org=$organization_name --nocache";
+    $terminus_site_organizations_add_cmd = "terminus-034b site organizations add --site=$site_name --org=$organization_name --nocache";
     // changing max to 1. i.e. don't try repeatedly.  No longer backgrounding the site create command. Edge cases....
     exec($terminus_site_organizations_add_cmd, $output, $return);
     unset($output);
     unset($return);
 
-    $terminus_site_instrument_cmd = "terminus site instrument --change-to-org=$organization_uuid --site=$site_name --nocache";
+    $terminus_site_instrument_cmd = "terminus-034b site instrument --change-to-org=$organization_uuid --site=$site_name --nocache";
     exec($terminus_site_instrument_cmd, $output, $return);
     unset($output);
     unset($return);
 
-    $terminus_site_organizations_remove_cmd = "terminus site organizations remove --site=$site_name --org=$organization_test_uuid --nocache";
+    $terminus_site_organizations_remove_cmd = "terminus-034b site organizations remove --site=$site_name --org=$organization_test_uuid --nocache";
     exec($terminus_site_organizations_remove_cmd, $output, $return);
     unset($output);
     unset($return);
@@ -579,9 +568,9 @@ function ucberkeley_website_add_team($form_state) {
   $administrators = variable_get('ucberkeley_website_administrators', array());
   foreach (array_keys($administrators) as $email) {
     //0.3.4 -it's broken in this version
-    //$terminus_site_team_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus site team add --site=" . $form_state['values']['site_name'] . " --member=$email --nocache";
-    // requires 0.4-beta
-    $terminus_site_team_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus04b site team add-member --site=" . $form_state['values']['site_name'] . " --member=$email --nocache";
+    //$terminus_site_team_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b site team add --site=" . $form_state['values']['website_info']['site_name'] . " --member=$email --nocache";
+    // requires 0.4-beta or higher
+    $terminus_site_team_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus site team add-member --site=" . $form_state['values']['website_info']['site_name'] . " --member=$email --nocache";
 
     exec($terminus_site_team_cmd, $output, $return);
     drupal_set_message($terminus_site_team_cmd);
@@ -593,50 +582,53 @@ function ucberkeley_website_add_team($form_state) {
 }
 
 function ucberkeley_website_install_ob($form_state) {
-  // The terminus drush wrapper fails: https://github.com/pantheon-systems/cli/issues/141
-  //$terminus_drush_site_install_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus ";
 
+  // The terminus drush site-install.  Must be in SFTP mode. https://github.com/pantheon-systems/cli/issues/141
+  $terminus_site_cmode_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b site connection-mode --site=" . $form_state['values']['website_info']['site_name'] . " --env=dev --set=sftp --nocache";
+  exec($terminus_site_cmode_cmd, $output, $return);
+  drupal_set_message($terminus_site_cmode_cmd);
+  drupal_set_message("Cmode=sftp return=$return output:<br />" . implode("<br />", $output));
+  unset($return);
+  unset($output);
 
-  /* Calling drush here is sketchy and would require aliases download etc
-  $drush_site_install_cmd = "/usr/bin/php /Users/bwood/bin/drush/drush-6.3.0/drush.php --strict=0 @pantheon." . $form_state['values']['site_name'] . ".dev site-install openberkeley --site-mail=bwood+01@berkeley.edu --site-name=\"Spin-up Test\" --account-mail=bwood+01@berkeley.edu --account-name=ucbadmin update_status_module=\"array\(FALSE,FALSE\)\" openberkeley_add_admin_form.cas_name=213108,304629,248324,267087 --account-mail=bwood+01@berkeley.edu";
-  $drush_site_install_cmd = "sites/all/libraries/site-install @pantheon." . $form_state['values']['site_name'] . ".dev 2>&1";
-  drupal_set_message($drush_site_install_cmd);
-  exec($drush_site_install_cmd, $output, $return);
-  drupal_set_message("Site-install return=$return output:<br />" . implode("<br />", $output));
-  */
+  // give the connection mode some time
+  sleep(10);
 
   $administrators = variable_get('ucberkeley_website_administrators', array());
-  drupal_set_message("Installing Open Berkeley");
-  $url = "http://dev-" . $form_state['values']['site_name'] . ".pantheon.berkeley.edu/";
-  $request = "profile=openberkeley&locale=en&op=start&id=1";
-  $request .= "&forms[install_configure_form][site_name]=" . urlencode('Auto Spin-up');
-  $request .= "&forms[install_configure_form][site_mail]=" . urlencode('bwood+01@berkeley.edu');
-  $request .= "&forms[install_configure_form][account][name]=" . urlencode('ucbadmin');
-  $request .= "&forms[install_configure_form][account][mail]=" . urlencode('bwood+01@berkeley.edu');
-  $request .= "&forms[install_configure_form][account][pass]=" . urlencode('t');
-  $request .= "&forms[install_configure_form][update_status_module]=" . urlencode('array(FALSE,FALSE)');
-  $request .= "&forms[openberkeley_add_admin_form][cas_name]=" . urlencode(implode(',', array_values($administrators)));
-  $request .= "&forms[panopoly_theme_selection_form][theme]=" . urlencode('berkeley');
-  $url_request = $url . "install_ucb.php?" . $request;
-  drupal_set_message($url_request);
-  $options = array(
-    //'method' => 'GET',
-    //'data' => $request,
-    //'headers' => array('Content-Type' => 'text/html'),
-    'timeout' => 30 // bumping this to 300 seems to cause an internal server error on Pantheon. Just let it timeout.
-  );
+  $drush_site_install_cmd = "drush -y site-install openberkeley --site-mail=bwood+01@berkeley.edu --site-name=" . $form_state['values']['website_info']['site_name'];
+  $drush_site_install_cmd .= " --account-mail=bwood+01@berkeley.edu --account-name=ucbadmin install_configure_form.update_status_module=\"array\(FALSE,FALSE\)\"";
+  $drush_site_install_cmd .= " openberkeley_add_admin_form.cas_name= " . implode(',', array_values($administrators));
+  $drush_site_install_cmd .= " --account-mail=bwood+01@berkeley.edu";
+  $drush_site_install_cmd .= " --site=" . $form_state['values']['website_info']['site_name'];
+  $terminus_drush_site_install_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b " . $drush_site_install_cmd;
+  drupal_set_message($terminus_drush_site_install_cmd);
+  exec($terminus_drush_site_install_cmd, $output, $return);
+  drupal_set_message("Site-install return=$return output:<br />" . implode("<br />", $output));
+  unset($return);
+  unset($output);
 
+/*
 
-  $response = drupal_http_request($url_request, $options);
+  // Commit the changes to settings.php
+  $terminus_site_code_commit = ucberkeley_website_export_terminus_cache_dir() . " && " . 'echo "y" |' . TERMINUS_PATH . '/terminus-034b site code commit --message="Install Open Berkeley" --env=dev --site=' . $form_state['values']['website_info']['site_name'];
+  exec($terminus_site_code_commit, $output, $return);
+  drupal_set_message($terminus_site_code_commit);
+  drupal_set_message("Commit return=$return output:<br />" . implode("<br />", $output));
+  unset($return);
+  unset($output);
 
-  //let it time out
-  //if ((isset($response->error)) && (!empty($response->error))) {
-  //  drupal_set_message("Error (" . $response->code . ") " . $response->error, "error");
-  //}
-
+  // Set connection-mode back to Git
+  $terminus_site_cmode_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b site connection-mode --site=" . $form_state['values']['website_info']['site_name'] . " --env=dev --set=git --nocache";
+  exec($terminus_site_cmode_cmd, $output, $return);
+  drupal_set_message($terminus_site_cmode_cmd);
+  drupal_set_message("Cmode=git return=$return output:<br />" . implode("<br />", $output));
+  unset($return);
+  unset($output);
+*/
   // Allow installation to finish
-  sleep(120);
+  //sleep(120);
   // Check the site.
+  $url = "http://dev-" . $form_state['values']['website_info']['site_name'] . ".pantheon.berkeley.edu/";
   $test = drupal_http_request($url);
   if (($test->code == 200) || ($test->code == 301) || ($test->code == 302)) {
     drupal_set_message("Your site is ready at " . l($url, $url, array('attributes' => array('target' => "_new"))));
