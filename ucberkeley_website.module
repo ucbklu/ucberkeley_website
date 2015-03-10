@@ -470,6 +470,11 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
 
 function ucberkeley_website_openberkeley_form_validate($form, &$form_state) {
   //TODO: check_plain user input!
+
+  if ($form_state['values']['mou']['mou_agree'] == 0) {
+    //form_set_error('i_agree_to_the_terms_of_service_at_link', t('Sorry, but you must agree to the terms of service.'));
+    form_set_error('mou_agree', t('Sorry, but you must agree to our Memorandum of Understanding.'));
+  }
   //TODO: do a sites info to ensure that there is not already a site with that name
   return TRUE;
 }
