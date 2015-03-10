@@ -668,12 +668,22 @@ function ucberkeley_website_install_ob($form_state) {
 function ucberkeley_website_demo_mysites() {
   $submission = variable_get("ucberkeley_website_submission", array());
   drupal_set_title("Your sites");
-  $data = "";
+  $data = array();
   foreach ($submission['website_info'] as $key => $value) {
-    $data .= $key . ": " . $value . "<br />";
+    $data[] = array($key, $value);
   }
-  //print '</pre>';
 
-  return array('#markup' => '<p>' . $data . '</p>');
+  $table = array(
+    '#theme' => 'table',
+    '#header' => array(t('Key'), t('Value')),
+/*
+    '#rows' => array(
+      array('row1col1', 'row2col2'),
+      array('row2col1', 'row2col2'),
+    ),
+*/
+    '#rows' => $data,
+  );
+
+  return $table;
 }
-// deploy to test and live
