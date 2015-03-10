@@ -671,15 +671,26 @@ function ucberkeley_website_install_ob($form_state) {
 function ucberkeley_website_demo_mysites() {
   $submissions = variable_get("ucberkeley_website_submissions", array());
   drupal_set_title("Your sites");
+  return ucberkeley_website_site_information($submissions);
+}
+
+function ucberkeley_website_site_information($submissions, $fieldset = TRUE, $table_headers = TRUE) {
   $render = array();
   $fieldset_children = array();
+  if ($table_headers) {
+    $headers = array(t('Question'), t('Your Answer'));
+      }
+  else {
+    $headers = array();
+  }
+
   drupal_add_library('system', 'drupal.collapse');
   $site_url = 'http://test-' . $submissions['values']['website_info']['site_short_name'] . '.pantheon.berkeley.edu';
   $render[] = array(
     '#theme' => 'item_list',
     '#title' => $submissions['values']['website_info']['site_name'],
     '#items' => array(
-      l($site_url, $site_url,  array('attributes' => array('target' => "_new"))),
+      l($site_url, $site_url, array('attributes' => array('target' => "_new"))),
     ),
   );
   foreach ($submissions['values'] as $key => $value) {
@@ -693,7 +704,7 @@ function ucberkeley_website_demo_mysites() {
       }
       $fieldset_children[] = array(
         '#theme' => 'table',
-        '#header' => array(t('Question'), t('Your Answer')),
+        '#header' => $headers,
         /*
             '#rows' => array(
               array('row1col1', 'row2col2'),
@@ -702,16 +713,20 @@ function ucberkeley_website_demo_mysites() {
         */
         '#rows' => $data,
       );
-
     }
   }
-  $render[] = array(
-    '#theme' => 'fieldset',
-    '#title' => 'Details for ' . $submissions['values']['website_info']['site_name'],
-    '#attributes' => array('class' => array('collapsible', 'collapsed')),
-    '#description' => '<p><em>' . t('Original website request') . '</em></p>',
-    '#children' => drupal_render($fieldset_children),
-  );
+  if ($fieldset) {
+    $render[] = array(
+      '#theme' => 'fieldset',
+      '#title' => 'Details for ' . $submissions['values']['website_info']['site_name'],
+      '#attributes' => array('class' => array('collapsible', 'collapsed')),
+      '#description' => '<p><em>' . t('Original website request') . '</em></p>',
+      '#children' => drupal_render($fieldset_children),
+    );
+  }
+  else {
+    $render = array_merge($render, $fieldset_children);
+  }
   return $render;
 }
 
@@ -721,8 +736,11 @@ function ucberkeley_website_email_confirm($form_state) {
   $params = array(
     '!site_name' => 'My site name',
     '!username' => 'Tony',
-
+    '!site_info' => drupal_render(ucberkeley_website_site_information($form_state, FALSE, FALSE)),
   );
+  $params['!site_info'] = str_replace("<h3>", "\n<h3>", $params['!site_info']);
+  $params['!site_info'] = drupal_html_to_text(str_replace('</td><td>', ': </td><td>', $params['!site_info']));
+  $params['!site_info'] = str_replace('.... ', '', $params['!site_info']);
   drupal_mail('ucberkeley_website', 'website_creation', $account->mail, user_preferred_language($user), $params);
 }
 
@@ -732,5 +750,5 @@ function ucberkeley_website_email_confirm($form_state) {
 function ucberkeley_website_mail($key, &$message, $params) {
   $langcode = $message['language']->language;
   $message['subject'] = t('Your new Open Berkeley Site: !site_name', $params, array('langcode' => $langcode));
-  $message['body'][] = t("Dear !username\n\nCongratulations! You have created a new Open Berkeley Website.", $params, array('langcode' => $langcode));
+  $message['body'][] = t("Dear !username\n\nCongratulations! You have created a new Open Berkeley Website.\n\n!site_info", $params, array('langcode' => $langcode));
 }
