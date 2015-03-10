@@ -26,6 +26,14 @@ function ucberkeley_website_menu() {
     'menu_name' => 'main-menu',
     'plid' => 2283,
   );
+  $items['web-hosting/my-sites'] = array(
+    'title' => 'My Websites',
+    'description' => 'List your websites',
+    'page callback' => 'ucberkeley_website_demo_mysites',
+    'access arguments' => array('access content'),
+    'menu_name' => 'main-menu',
+    'plid' => 2283,
+  );
 
   return $items;
 }
@@ -446,6 +454,12 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#default_value' => "",
   );
 
+  //ITLG demo
+  $form['demo'] = array(
+    '#type' => 'hidden',
+    '#value' => 1,
+  );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Start Building Your Website with Open Berkeley!'),
@@ -460,7 +474,7 @@ function ucberkeley_website_openberkeley_form_validate($form, &$form_state) {
   return TRUE;
 }
 
-function ucberkeley_website_ajax_add_row($form, $form_state) {
+function ucberkeley_website_ajax_add_row($form, &$form_state) {
   $type = $form_state['triggering_element']['#ajax']['wrapper'];
   return $form['people'][$type][$type . '_container'];
 }
@@ -472,9 +486,16 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
     ucberkeley_website_terminus_authenticate();
   }
 
-  //ucberkeley_website_container_spin_up($form_state);
+  if ($form_state['values']['demo'] != 1) {
+  ucberkeley_website_container_spin_up($form_state);
   ucberkeley_website_install_ob($form_state);
-
+  }
+  else {
+    // Exclude unnecessary elements.
+    form_state_values_clean($form_state);
+    variable_set('ucberkeley_website_submission', $form_state['values']);
+    $form_state['redirect'] = "web-hosting/my-sites";
+  }
   //logout?
 }
 
@@ -641,4 +662,18 @@ function ucberkeley_website_install_ob($form_state) {
 
 }
 
+/**
+ * Mock functionality for ITLG demo
+ */
+function ucberkeley_website_demo_mysites() {
+  $submission = variable_get("ucberkeley_website_submission", array());
+  drupal_set_title("Your sites");
+  $data = "";
+  foreach ($submission['website_info'] as $key => $value) {
+    $data .= $key . ": " . $value . "<br />";
+  }
+  //print '</pre>';
+
+  return array('#markup' => '<p>' . $data . '</p>');
+}
 // deploy to test and live
