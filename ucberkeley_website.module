@@ -486,14 +486,14 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
     ucberkeley_website_terminus_authenticate();
   }
 
-  if ($form_state['values']['demo'] != 1) {
-  ucberkeley_website_container_spin_up($form_state);
-  ucberkeley_website_install_ob($form_state);
+  if (variable_get('ucberkeley_website_demo', 0) != 1) {
+    ucberkeley_website_container_spin_up($form_state);
+    ucberkeley_website_install_ob($form_state);
   }
   else {
     // Exclude unnecessary elements.
     form_state_values_clean($form_state);
-    variable_set('ucberkeley_website_submission', $form_state['values']);
+    variable_set('ucberkeley_website_submissions', $form_state);
     $form_state['redirect'] = "web-hosting/my-sites";
   }
   //logout?
@@ -628,24 +628,24 @@ function ucberkeley_website_install_ob($form_state) {
   unset($return);
   unset($output);
 
-/*
+  /*
 
-  // Commit the changes to settings.php
-  $terminus_site_code_commit = ucberkeley_website_export_terminus_cache_dir() . " && " . 'echo "y" |' . TERMINUS_PATH . '/terminus-034b site code commit --message="Install Open Berkeley" --env=dev --site=' . $form_state['values']['website_info']['site_name'];
-  exec($terminus_site_code_commit, $output, $return);
-  drupal_set_message($terminus_site_code_commit);
-  drupal_set_message("Commit return=$return output:<br />" . implode("<br />", $output));
-  unset($return);
-  unset($output);
+    // Commit the changes to settings.php
+    $terminus_site_code_commit = ucberkeley_website_export_terminus_cache_dir() . " && " . 'echo "y" |' . TERMINUS_PATH . '/terminus-034b site code commit --message="Install Open Berkeley" --env=dev --site=' . $form_state['values']['website_info']['site_name'];
+    exec($terminus_site_code_commit, $output, $return);
+    drupal_set_message($terminus_site_code_commit);
+    drupal_set_message("Commit return=$return output:<br />" . implode("<br />", $output));
+    unset($return);
+    unset($output);
 
-  // Set connection-mode back to Git
-  $terminus_site_cmode_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b site connection-mode --site=" . $form_state['values']['website_info']['site_name'] . " --env=dev --set=git --nocache";
-  exec($terminus_site_cmode_cmd, $output, $return);
-  drupal_set_message($terminus_site_cmode_cmd);
-  drupal_set_message("Cmode=git return=$return output:<br />" . implode("<br />", $output));
-  unset($return);
-  unset($output);
-*/
+    // Set connection-mode back to Git
+    $terminus_site_cmode_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b site connection-mode --site=" . $form_state['values']['website_info']['site_name'] . " --env=dev --set=git --nocache";
+    exec($terminus_site_cmode_cmd, $output, $return);
+    drupal_set_message($terminus_site_cmode_cmd);
+    drupal_set_message("Cmode=git return=$return output:<br />" . implode("<br />", $output));
+    unset($return);
+    unset($output);
+  */
   // Allow installation to finish
   //sleep(120);
   // Check the site.
@@ -666,24 +666,49 @@ function ucberkeley_website_install_ob($form_state) {
  * Mock functionality for ITLG demo
  */
 function ucberkeley_website_demo_mysites() {
-  $submission = variable_get("ucberkeley_website_submission", array());
+  $submissions = variable_get("ucberkeley_website_submissions", array());
   drupal_set_title("Your sites");
-  $data = array();
-  foreach ($submission['website_info'] as $key => $value) {
-    $data[] = array($key, $value);
-  }
-
-  $table = array(
-    '#theme' => 'table',
-    '#header' => array(t('Key'), t('Value')),
-/*
-    '#rows' => array(
-      array('row1col1', 'row2col2'),
-      array('row2col1', 'row2col2'),
+  $render = array();
+  $fieldset_children = array();
+  drupal_add_library('system', 'drupal.collapse');
+  $site_url = 'http://test-' . $submissions['values']['website_info']['site_short_name'] . '.pantheon.berkeley.edu';
+  $render[] = array(
+    '#theme' => 'item_list',
+    '#title' => $submissions['values']['website_info']['site_name'],
+    '#items' => array(
+      l($site_url, $site_url,  array('attributes' => array('target' => "_new"))),
     ),
-*/
-    '#rows' => $data,
+  );
+  foreach ($submissions['values'] as $key => $value) {
+    if (is_array($value)) {
+      $fieldset_children[] = array(
+        '#markup' => "<h3>" . $submissions['complete form'][$key]['#title'] . "</h3>"
+      );
+      $data = array();
+      foreach ($value as $k => $v) {
+        $data[] = array($submissions['complete form'][$key][$k]['#title'], $v);
+      }
+      $fieldset_children[] = array(
+        '#theme' => 'table',
+        '#header' => array(t('Question'), t('Your Answer')),
+        /*
+            '#rows' => array(
+              array('row1col1', 'row2col2'),
+              array('row2col1', 'row2col2'),
+            ),
+        */
+        '#rows' => $data,
+      );
+
+    }
+  }
+  $render[] = array(
+    '#theme' => 'fieldset',
+    '#title' => 'Details for ' . $submissions['values']['website_info']['site_name'],
+    '#attributes' => array('class' => array('collapsible', 'collapsed')),
+    '#description' => '<p><em>' . t('Original website request') . '</em></p>',
+    '#children' => drupal_render($fieldset_children),
   );
 
-  return $table;
+  return $render;
 }
