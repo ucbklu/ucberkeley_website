@@ -674,7 +674,7 @@ function ucberkeley_website_demo_mysites() {
   return ucberkeley_website_site_information($submissions);
 }
 
-function ucberkeley_website_site_information($submissions, $fieldset = TRUE, $table_headers = TRUE) {
+function ucberkeley_website_site_information($submissions, $title = TRUE, $fieldset = TRUE, $table_headers = TRUE) {
   $render = array();
   $fieldset_children = array();
   if ($table_headers) {
@@ -684,19 +684,32 @@ function ucberkeley_website_site_information($submissions, $fieldset = TRUE, $ta
     $headers = array();
   }
 
+  if ($title) {
+    $listing_title = $submissions['values']['website_info']['site_name'];
+  }
+  else {
+    $listing_title = "";
+  }
   drupal_add_library('system', 'drupal.collapse');
   $site_url = 'http://test-' . $submissions['values']['website_info']['site_short_name'] . '.pantheon.berkeley.edu';
   $render[] = array(
     '#theme' => 'item_list',
-    '#title' => $submissions['values']['website_info']['site_name'],
+    '#title' => $listing_title,
     '#items' => array(
       l($site_url, $site_url, array('attributes' => array('target' => "_new"))),
     ),
   );
+
+  if (!$listing_title) {
+    $render[] = array(
+      '#markup' => "\n\n"
+    );
+  }
+
   foreach ($submissions['values'] as $key => $value) {
     if (is_array($value)) {
       $fieldset_children[] = array(
-        '#markup' => "<h3>" . $submissions['complete form'][$key]['#title'] . "</h3>"
+        '#markup' => "<h3>" . $submissions['complete form'][$key]['#title'] . "</h3>\n"
       );
       $data = array();
       foreach ($value as $k => $v) {
@@ -736,11 +749,14 @@ function ucberkeley_website_email_confirm($form_state) {
   $params = array(
     '!site_name' => 'My site name',
     '!username' => 'Tony',
-    '!site_info' => drupal_render(ucberkeley_website_site_information($form_state, FALSE, FALSE)),
+    '!site_info' => drupal_render(ucberkeley_website_site_information($form_state, FALSE, FALSE, FALSE)),
   );
-  $params['!site_info'] = str_replace("<h3>", "\n<h3>", $params['!site_info']);
-  $params['!site_info'] = drupal_html_to_text(str_replace('</td><td>', ': </td><td>', $params['!site_info']));
-  $params['!site_info'] = str_replace('.... ', '', $params['!site_info']);
+  //$params['!site_info'] = str_replace("<h3>", "\n\n<h3>", $params['!site_info']);
+  $params['!site_info'] = preg_replace("/<\/?tbody>/", "", $params['!site_info']);
+  $params['!site_info'] = str_replace('</td><td>', ': </td><td>', $params['!site_info']);
+  //$params['!site_info'] = drupal_html_to_text($params['!site_info']);
+  $params['!site_info'] = strip_tags($params['!site_info']);
+  //$params['!site_info'] = str_replace('.... ', '', $params['!site_info']);
   drupal_mail('ucberkeley_website', 'website_creation', $account->mail, user_preferred_language($user), $params);
 }
 
