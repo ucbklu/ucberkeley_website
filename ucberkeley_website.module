@@ -495,6 +495,7 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
     form_state_values_clean($form_state);
     variable_set('ucberkeley_website_submissions', $form_state);
     $form_state['redirect'] = "web-hosting/my-sites";
+    ucberkeley_website_email_confirm($form_state);
   }
   //logout?
 }
@@ -664,6 +665,8 @@ function ucberkeley_website_install_ob($form_state) {
 
 /**
  * Mock functionality for ITLG demo
+ *
+ * Display a list of user sites
  */
 function ucberkeley_website_demo_mysites() {
   $submissions = variable_get("ucberkeley_website_submissions", array());
@@ -709,6 +712,25 @@ function ucberkeley_website_demo_mysites() {
     '#description' => '<p><em>' . t('Original website request') . '</em></p>',
     '#children' => drupal_render($fieldset_children),
   );
-
   return $render;
+}
+
+function ucberkeley_website_email_confirm($form_state) {
+  global $user;
+  $account = user_load($user->uid);
+  $params = array(
+    '!site_name' => 'My site name',
+    '!username' => 'Tony',
+
+  );
+  drupal_mail('ucberkeley_website', 'website_creation', $account->mail, user_preferred_language($user), $params);
+}
+
+/**
+ * Implements hook_mail().
+ */
+function ucberkeley_website_mail($key, &$message, $params) {
+  $langcode = $message['language']->language;
+  $message['subject'] = t('Your new Open Berkeley Site: !site_name', $params, array('langcode' => $langcode));
+  $message['body'][] = t("Dear !username\n\nCongratulations! You have created a new Open Berkeley Website.", $params, array('langcode' => $langcode));
 }
