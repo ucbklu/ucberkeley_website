@@ -679,28 +679,33 @@ function ucberkeley_website_site_information($submissions, $title = TRUE, $field
   $fieldset_children = array();
   if ($table_headers) {
     $headers = array(t('Question'), t('Your Answer'));
-      }
+  }
   else {
     $headers = array();
   }
 
+  $site_url_no_http = 'test-' . $submissions['values']['website_info']['site_short_name'] . '.pantheon.berkeley.edu';
+  $site_url = 'http://' . $site_url_no_http;
   if ($title) {
-    $listing_title = $submissions['values']['website_info']['site_name'];
+    $site_title = $site_url_no_http;
   }
   else {
-    $listing_title = "";
+    $site_title = "";
   }
   drupal_add_library('system', 'drupal.collapse');
-  $site_url = 'http://test-' . $submissions['values']['website_info']['site_short_name'] . '.pantheon.berkeley.edu';
+
+
+
   $render[] = array(
     '#theme' => 'item_list',
-    '#title' => $listing_title,
+    '#title' => $site_title,
     '#items' => array(
-      l($site_url, $site_url, array('attributes' => array('target' => "_new"))),
-    ),
+      "<b>Front Page:</b> " . l($site_url, $site_url, array('attributes' => array('target' => "_new"))),
+      "<b>Admin Login:</b> " . l($site_url . "/cas", $site_url . "/cas", array('attributes' => array('target' => "_new")))
+    )
   );
 
-  if (!$listing_title) {
+  if (!$title) {
     $render[] = array(
       '#markup' => "\n\n"
     );
@@ -713,6 +718,9 @@ function ucberkeley_website_site_information($submissions, $title = TRUE, $field
       );
       $data = array();
       foreach ($value as $k => $v) {
+        if ($k == 'mou_agree') {
+          ($v == 1) ? $v = "Yes" : $v ="No";
+        }
         $data[] = array($submissions['complete form'][$key][$k]['#title'], $v);
       }
       $fieldset_children[] = array(
@@ -731,9 +739,9 @@ function ucberkeley_website_site_information($submissions, $title = TRUE, $field
   if ($fieldset) {
     $render[] = array(
       '#theme' => 'fieldset',
-      '#title' => 'Details for ' . $submissions['values']['website_info']['site_name'],
+      '#title' => 'Original Website Request',
       '#attributes' => array('class' => array('collapsible', 'collapsed')),
-      '#description' => '<p><em>' . t('Original website request') . '</em></p>',
+      //'#description' => '<p><em>' . t('Original website request') . '</em></p>',
       '#children' => drupal_render($fieldset_children),
     );
   }
