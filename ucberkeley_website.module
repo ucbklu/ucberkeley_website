@@ -246,6 +246,8 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
       'callback' => 'ucberkeley_website_ajax_add_row',
       'wrapper' => 'site_builders',
     ),
+    '#limit_validation_errors' => array(), // No elements will be validated
+    '#submit' => array(),
   );
 
   // *** Editors ***
@@ -303,6 +305,8 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
       'callback' => 'ucberkeley_website_ajax_add_row',
       'wrapper' => 'editors',
     ),
+    '#limit_validation_errors' => array(), // No elements will be validated
+    '#submit' => array(),
   );
 
   // *** Contributors ***
@@ -360,6 +364,8 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
       'callback' => 'ucberkeley_website_ajax_add_row',
       'wrapper' => 'contributors',
     ),
+    '#limit_validation_errors' => array(), // No elements will be validated
+    '#submit' => array(),
   );
 
   // *** Billing and Hosting ***
