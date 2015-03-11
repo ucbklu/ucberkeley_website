@@ -45,6 +45,8 @@ function ucberkeley_website_menu() {
  * @return mixed
  */
 function ucberkeley_website_openberkeley_form($form, &$form_state) {
+  global $user;
+  $account = user_load($user->uid);
   drupal_set_title(t('Start Building Your Website with Open Berkeley'));
 
   $agree_yes = "I agree";
@@ -68,6 +70,36 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#description' => "",
     '#default_value' => 0,
     '#options' => array(t($agree_no), t($agree_yes)),
+  );
+
+  $form['requestor'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Requestor Information'),
+    '#description' => t('These values cannot be changed.'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+    '#disabled' => TRUE,
+  );
+  $form['requestor']['name'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('Requestor Name'),
+    '#description' => t(''),
+    '#default_value' => $account->name,
+    '#disabled' => TRUE,
+  );
+  $form['requestor']['email'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('Requestor Email'),
+    '#description' => t(''),
+    '#default_value' => $account->mail,
+  );
+  $form['requestor']['request_timestamp'] = array(
+    '#type' => 'hidden',
+    '#title' => "Time of request",
+    '#value' => "",
   );
 
   $form['website_info'] = array(
@@ -491,6 +523,8 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
     ucberkeley_website_terminus_authenticate();
   }
 
+  $form_state['values']['requestor']['request_timestamp'] = time();
+
   if (variable_get('ucberkeley_website_demo', 0) != 1) {
     ucberkeley_website_container_spin_up($form_state);
     ucberkeley_website_install_ob($form_state);
@@ -723,8 +757,13 @@ function ucberkeley_website_site_information($submissions, $title = TRUE, $field
       );
       $data = array();
       foreach ($value as $k => $v) {
-        if ($k == 'mou_agree') {
-          ($v == 1) ? $v = "Yes" : $v ="No";
+        switch($k) {
+          case "mou_agree":
+            ($v == 1) ? $v = "Yes" : $v ="No";
+            break;
+          case "request_timestamp":
+            $v = format_date($v, "custom", "Y-M-D h:i:s a");
+            break;
         }
         $data[] = array($submissions['complete form'][$key][$k]['#title'], $v);
       }
