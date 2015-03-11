@@ -712,7 +712,7 @@ function ucberkeley_website_demo_mysites() {
   drupal_set_title("Your sites");
   $data = array();
   $submissions = variable_get("ucberkeley_website_submissions", array());
-  arsort($submissions);
+  krsort($submissions);
   foreach ($submissions as $submission) {
     $data[] = ucberkeley_website_site_information($submission);
   }
