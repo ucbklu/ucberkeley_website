@@ -81,7 +81,7 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#collapsed' => FALSE,
     '#disabled' => TRUE,
   );
-  $form['requester']['name'] = array(
+  $form['requester']['requester_name'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
     '#title' => t('Requester Name'),
@@ -89,7 +89,7 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#default_value' => $account->name,
     '#disabled' => TRUE,
   );
-  $form['requester']['email'] = array(
+  $form['requester']['requester_email'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
     '#title' => t('Requester Email'),
@@ -486,12 +486,6 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#default_value' => "",
   );
 
-  //ITLG demo
-  $form['demo'] = array(
-    '#type' => 'hidden',
-    '#value' => 1,
-  );
-
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Start Building Your Website with Open Berkeley!'),
@@ -761,50 +755,54 @@ function ucberkeley_website_site_information($submission, $title = TRUE, $fields
     );
   }
 
-  foreach ($submission['values'] as $key => $value) {
-    if (is_array($value)) {
-      $fieldset_children[] = array(
-        '#markup' => "<h3>" . $submission['complete form'][$key]['#title'] . "</h3>\n"
-      );
-      $data = array();
-      foreach ($value as $k => $v) {
-        $data_done = FALSE;
-        switch ($k) {
-          case "mou_agree":
-            ($v == 1) ? $v = "Yes" : $v = "No";
-            break;
-          case "request_timestamp":
-            $v = format_date($v, "custom", $date_format);
-            break;
-          //TODO: Yuck. later make this a recursive function
-          case "site_builders":
-          case "editors":
-          case "contributors":
-            $type = $k;
-            foreach ($submission['values']['people'][$type][$type . '_container'] as $k2 => $v2) {
-              foreach ($v2 as $k3 => $v3)
-              $data[] = array(str_replace('_', ' ', $k3), $v3);
-            }
-            $data_done = TRUE;
-            break;
-        }
-        if (!$data_done) {
-          $data[] = array($submission['complete form'][$key][$k]['#title'], $v);
-        }
-      }
-      $fieldset_children[] = array(
-        '#theme' => 'table',
-        '#header' => $headers,
-        /*
-            '#rows' => array(
-              array('row1col1', 'row2col2'),
-              array('row2col1', 'row2col2'),
-            ),
-        */
-        '#rows' => $data,
-      );
-    }
+  foreach (array_keys($submission['values']) as $form_section) {
+    $sections_flat[$form_section] = _ucberkeley_website_flatten_array($submission['values'][$form_section]);
+    $complete_form_flat[$form_section] = _ucberkeley_website_flatten_array($submission['complete form'][$form_section]);
   }
+
+  foreach ($sections_flat as $key => $values) {
+
+    $fieldset_children[] = array(
+      '#markup' => "<h3>" . $submission['complete form'][$key]['#title'] . "</h3>\n"
+    );
+    $data = array();
+    foreach ($values as $k => $v) {
+      switch ($k) {
+        case "mou_agree":
+          ($v[0] == 1) ? $v[0] = "Yes" : $v[0] = "No";
+          break;
+        case "request_timestamp":
+          $v[0] = format_date($v[0], "custom", $date_format);
+          break;
+      }
+      foreach ($v as $k2 => $v2) {
+        ($k2 > 0) ? $num = " $k2" : $num = "";
+        switch ($key) {
+          case "people":
+          case "billing_hosting":
+            //TODO: Would be nice not to rely on the machine names here. Update
+            //the titles for these elements
+            $label = ucwords(str_replace("_", " ", $k));
+            break;
+          default:
+            $label = $submission['complete form'][$key][$k]['#title'];
+        }
+        $data[] = array($label . $num, $v2);
+      }
+    }
+    $fieldset_children[] = array(
+      '#theme' => 'table',
+      '#header' => $headers,
+
+      //              '#rows' => array(
+      //                array('row1col1', 'row2col2'),
+      //                array('row2col1', 'row2col2'),
+      //              ),
+
+      '#rows' => $data,
+    );
+  }
+
   if ($fieldset) {
     $render[] = array(
       '#theme' => 'fieldset',
@@ -818,6 +816,20 @@ function ucberkeley_website_site_information($submission, $title = TRUE, $fields
     $render = array_merge($render, $fieldset_children);
   }
   return $render;
+}
+
+/**
+ * Flatten multi-dimentional array preserving keys
+ *
+ * @param array $array
+ * @return array
+ */
+function _ucberkeley_website_flatten_array(array $array) {
+  $return = array();
+  array_walk_recursive($array, function ($v, $k) use (&$return) {
+    $return[$k][] = $v;
+  });
+  return $return;
 }
 
 function ucberkeley_website_email_confirm($form_state) {
