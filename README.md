@@ -3,6 +3,20 @@ UC Berkeley Website
 
 Sign-up form for new managed Open Berkeley site
 
+## Installation Instructions
+
+(I've taken care of this.)
+
+* Enable the module
+* Install the auth credentials
+* vset demo mode (see below)
+* Setup CAS redirection for specific pages
+```
+web-hosting/launch-your-pantheon-site
+web-hosting/get-open-berkeley
+web-hosting/my-sites
+```
+
 ## Demo Instructions
 
 ### Spin up a site using istdrupal-new-site.php
@@ -35,13 +49,19 @@ Deleting this variable will clear the sites listed on your [My Websites page](ht
 ### Fill out the Start Building Your Website form
 Fill out the [Start Building Your Website form](http://test-websolutions-ob.pantheon.berkeley.edu/web-hosting/get-open-berkeley) using the same values that you used in the `istdrupal-new-site.php` command.
 
-Click on the Form Save and Restore icon in your Chrome Toolbar and choose "Save form as it is" so you can refill the form easily at demo time.
+**Before you click submit:** Click on the Form Save and Restore icon in your Chrome Toolbar and choose "Save form as it is" so you can refill the form easily at demo time.
 
 Note: Before you use the plugin to fill your form, make sure you have added the same number of builders/editors/contributors that existed when you saved the form data.  (If you don't the data will still be filled, but you'll only have one person in each role.)
 
 Submit the form and dazzle your audience!
 
 The confirmation email is sent to the requestor's email address.
+
+#### Demo Details
+
+Before the demo do `terminus site wake --site=$site_name --env=test` on any sites that you might visit from your My Websites page.
+
+If you link to test-example and the browser spins for more than 5 seconds hit X and it will probably load.  Pantheon caching thing...
 
 ## Known Issues
 
