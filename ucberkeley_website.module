@@ -624,7 +624,7 @@ function ucberkeley_website_terminus_authenticate() {
     drupal_set_message("Authenticating: Failure (return=$return) output=" . $output, "error");
     return FALSE;
   }
-  drupal_set_message("Authenticating: Success.");
+  //drupal_set_message("Authenticating: Success.");
 }
 
 function ucberkeley_website_terminus_site_info() {
