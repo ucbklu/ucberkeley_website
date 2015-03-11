@@ -65,7 +65,7 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
   );
   $form['mou']['mou_agree'] = array(
     '#type' => 'radios',
-    '#required' => FALSE,
+    '#required' => TRUE,
     '#title' => t('Do you agree with our MOU?'),
     '#description' => "",
     '#default_value' => 0,
@@ -75,7 +75,7 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
   $form['requester'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#title' => t('requester Information'),
+    '#title' => t('Requester Information'),
     '#description' => t('These values cannot be changed.'),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
@@ -116,11 +116,11 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#description' => "",
     '#size' => 60,
     '#maxlength' => 128,
-    '#required' => FALSE,
+    '#required' => TRUE,
   );
   $form['website_info']['site_short_name'] = array(
     '#type' => 'textfield',
-    '#required' => FALSE,
+    '#required' => TRUE,
     '#title' => t('Site Short Name'),
     '#description' => t('This name should contain only lower case letters, numbers and dashes. (Spaces are not allowed.) This will be used in the url of the test version of your site. For example your Site Name might be "My Very Important Site" but you may want your Site Short Name to be "my-site".'),
     '#default_value' => "",
@@ -134,7 +134,7 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
   );
   $form['website_info']['site_email'] = array(
     '#type' => 'textfield',
-    '#required' => FALSE,
+    '#required' => TRUE,
     '#title' => t('Site Email'),
     '#description' => t('Preferred: Departmental or other generic email address'),
     '#default_value' => "",
@@ -502,6 +502,8 @@ function ucberkeley_website_openberkeley_form_validate($form, &$form_state) {
     form_set_error('mou_agree', t('Sorry, but you must agree to our Memorandum of Understanding.'));
   }
   //TODO: do a sites info to ensure that there is not already a site with that name
+
+  //TODO: Remove empty editor, builders, contributors
   return TRUE;
 }
 
@@ -533,7 +535,7 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
     $submissions[$submit_time] = $form_state;
     variable_set('ucberkeley_website_submissions', $submissions);
     $form_state['redirect'] = "web-hosting/my-sites";
-    //ucberkeley_website_email_confirm($form_state);
+    ucberkeley_website_email_confirm($form_state);
   }
   //logout?
 }
@@ -713,6 +715,11 @@ function ucberkeley_website_demo_mysites() {
   $data = array();
   $submissions = variable_get("ucberkeley_website_submissions", array());
   krsort($submissions);
+  if (count($submissions) == 0) {
+    return array(
+      '#markup' => "<h3>You don't yet have any Open Berkeley sites</h3><p>To create a site " . l("please see this page", "web-hosting/get-open-berkeley") . ".</p>"
+    );
+  }
   foreach ($submissions as $submission) {
     $data[] = ucberkeley_website_site_information($submission);
   }
@@ -836,17 +843,15 @@ function ucberkeley_website_email_confirm($form_state) {
   global $user;
   $account = user_load($user->uid);
   $params = array(
-    '!site_name' => 'My site name',
-    '!username' => 'Tony',
+    '!site_name' => $form_state['values']['website_info']['site_name'],
+    '!username' => $form_state['values']['requester']['requester_name'],
     '!site_info' => drupal_render(ucberkeley_website_site_information($form_state, FALSE, FALSE, FALSE)),
   );
-  //$params['!site_info'] = str_replace("<h3>", "\n\n<h3>", $params['!site_info']);
   $params['!site_info'] = preg_replace("/<\/?tbody>/", "", $params['!site_info']);
   $params['!site_info'] = str_replace('</td><td>', ': </td><td>', $params['!site_info']);
-  //$params['!site_info'] = drupal_html_to_text($params['!site_info']);
   $params['!site_info'] = strip_tags($params['!site_info']);
-  //$params['!site_info'] = str_replace('.... ', '', $params['!site_info']);
   drupal_mail('ucberkeley_website', 'website_creation', $account->mail, user_preferred_language($user), $params);
+  //TODO: should we also send this confirmation email to site_email?
 }
 
 /**
@@ -855,5 +860,5 @@ function ucberkeley_website_email_confirm($form_state) {
 function ucberkeley_website_mail($key, &$message, $params) {
   $langcode = $message['language']->language;
   $message['subject'] = t('Your new Open Berkeley Site: !site_name', $params, array('langcode' => $langcode));
-  $message['body'][] = t("Dear !username\n\nCongratulations! You have created a new Open Berkeley Website.\n\n!site_info", $params, array('langcode' => $langcode));
+  $message['body'][] = t("Dear !username,\n\nCongratulations! You have created a new Open Berkeley Website.\n\n!site_info", $params, array('langcode' => $langcode));
 }
