@@ -26,6 +26,14 @@ function ucberkeley_website_menu() {
     'menu_name' => 'main-menu',
     'plid' => 2283,
   );
+  $items['web-hosting/my-sites'] = array(
+    'title' => 'My Websites',
+    'description' => 'List your websites',
+    'page callback' => 'ucberkeley_website_demo_mysites',
+    'access arguments' => array('access content'),
+    'menu_name' => 'main-menu',
+    'plid' => 2283,
+  );
 
   return $items;
 }
@@ -37,6 +45,8 @@ function ucberkeley_website_menu() {
  * @return mixed
  */
 function ucberkeley_website_openberkeley_form($form, &$form_state) {
+  global $user;
+  $account = user_load($user->uid);
   drupal_set_title(t('Start Building Your Website with Open Berkeley'));
 
   $agree_yes = "I agree";
@@ -55,11 +65,41 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
   );
   $form['mou']['mou_agree'] = array(
     '#type' => 'radios',
-    '#required' => FALSE,
+    '#required' => TRUE,
     '#title' => t('Do you agree with our MOU?'),
     '#description' => "",
     '#default_value' => 0,
     '#options' => array(t($agree_no), t($agree_yes)),
+  );
+
+  $form['requester'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Requester Information'),
+    '#description' => t('These values cannot be changed.'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+    '#disabled' => TRUE,
+  );
+  $form['requester']['requester_name'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('Requester Name'),
+    '#description' => t(''),
+    '#default_value' => $account->name,
+    '#disabled' => TRUE,
+  );
+  $form['requester']['requester_email'] = array(
+    '#type' => 'textfield',
+    '#required' => FALSE,
+    '#title' => t('Requester Email'),
+    '#description' => t(''),
+    '#default_value' => $account->mail,
+  );
+  $form['requester']['request_timestamp'] = array(
+    '#type' => 'hidden',
+    '#title' => "Time of request",
+    '#value' => "",
   );
 
   $form['website_info'] = array(
@@ -76,11 +116,11 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#description' => "",
     '#size' => 60,
     '#maxlength' => 128,
-    '#required' => FALSE,
+    '#required' => TRUE,
   );
   $form['website_info']['site_short_name'] = array(
     '#type' => 'textfield',
-    '#required' => FALSE,
+    '#required' => TRUE,
     '#title' => t('Site Short Name'),
     '#description' => t('This name should contain only lower case letters, numbers and dashes. (Spaces are not allowed.) This will be used in the url of the test version of your site. For example your Site Name might be "My Very Important Site" but you may want your Site Short Name to be "my-site".'),
     '#default_value' => "",
@@ -94,7 +134,7 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
   );
   $form['website_info']['site_email'] = array(
     '#type' => 'textfield',
-    '#required' => FALSE,
+    '#required' => TRUE,
     '#title' => t('Site Email'),
     '#description' => t('Preferred: Departmental or other generic email address'),
     '#default_value' => "",
@@ -206,6 +246,8 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
       'callback' => 'ucberkeley_website_ajax_add_row',
       'wrapper' => 'site_builders',
     ),
+    '#limit_validation_errors' => array(), // No elements will be validated
+    '#submit' => array(),
   );
 
   // *** Editors ***
@@ -263,6 +305,8 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
       'callback' => 'ucberkeley_website_ajax_add_row',
       'wrapper' => 'editors',
     ),
+    '#limit_validation_errors' => array(), // No elements will be validated
+    '#submit' => array(),
   );
 
   // *** Contributors ***
@@ -320,6 +364,8 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
       'callback' => 'ucberkeley_website_ajax_add_row',
       'wrapper' => 'contributors',
     ),
+    '#limit_validation_errors' => array(), // No elements will be validated
+    '#submit' => array(),
   );
 
   // *** Billing and Hosting ***
@@ -446,12 +492,6 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#default_value' => "",
   );
 
-  $form['step'] = array(
-    '#type' => 'radios',
-    '#title' => t('Install Step'),
-    '#default_value' => 0,
-    '#options' => array(t('1: Spin-up container'), t('2: Install drupal')),
-  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Start Building Your Website with Open Berkeley!'),
@@ -462,11 +502,18 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
 
 function ucberkeley_website_openberkeley_form_validate($form, &$form_state) {
   //TODO: check_plain user input!
+
+  if ($form_state['values']['mou']['mou_agree'] == 0) {
+    //form_set_error('i_agree_to_the_terms_of_service_at_link', t('Sorry, but you must agree to the terms of service.'));
+    form_set_error('mou_agree', t('Sorry, but you must agree to our Memorandum of Understanding.'));
+  }
   //TODO: do a sites info to ensure that there is not already a site with that name
+
+  //TODO: Remove empty editor, builders, contributors
   return TRUE;
 }
 
-function ucberkeley_website_ajax_add_row($form, $form_state) {
+function ucberkeley_website_ajax_add_row($form, &$form_state) {
   $type = $form_state['triggering_element']['#ajax']['wrapper'];
   return $form['people'][$type][$type . '_container'];
 }
@@ -478,19 +525,81 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
     ucberkeley_website_terminus_authenticate();
   }
 
-  if ($form_state['values']['step'] == 0) {
+  $submit_time = time();
+  $form_state['values']['requester']['request_timestamp'] = $submit_time;
+
+  if (variable_get('ucberkeley_website_demo', 0) != 1) {
     ucberkeley_website_container_spin_up($form_state);
-    ucberkeley_website_add_team($form_state);
-    drupal_set_message("Now install install_ucb.php and resubmit this form with the same Site Name (" . $form_state['values']['site_name'] . ")");
-  }
-  if ($form_state['values']['step'] == 1) {
     ucberkeley_website_install_ob($form_state);
+  }
+  else {
+    // Exclude unnecessary elements.
+    form_state_values_clean($form_state);
+    //get past submissions
+    $submissions = variable_get('ucberkeley_website_submissions', array());
+    //add this submission
+    $submissions[$submit_time] = $form_state;
+    variable_set('ucberkeley_website_submissions', $submissions);
+    $form_state['redirect'] = "web-hosting/my-sites";
+    ucberkeley_website_email_confirm($form_state);
+
+    // Batch API to make it look more impressive :-)
+    $operations = array();
+    $operations[] = array('ucberkeley_website_sleep', array(2));
+    $operations[] = array('ucberkeley_website_sleep2', array(1));
+    $operations[] = array('ucberkeley_website_sleep3', array(3));
+
+    $batch = array(
+      'operations' => $operations,
+      'finished' => 'ucberkeley_website_new_openberkeley_site_batch_finished',
+      'title' => t('Spin-up a new Open Berkeley Website'),
+      'init_message' => t('Initiating site creation...'),
+      'progress_message' => t('@percentage% complete...'),
+      'error_message' => t('Splat! We hit an error.')
+    );
+    batch_set($batch);
+
   }
   //logout?
 }
 
+function ucberkeley_website_sleep($seconds, &$context) {
+  $context['message'] = t('Spinning up a Pantheon container...');
+  sleep($seconds);
+  $context['finished'] = 1.0;
+}
+
+function ucberkeley_website_sleep2($x, &$context) {
+  $seconds = 3;
+  $context['message'] = t('Unleashing madd skilz...');
+  exec("sleep $seconds");
+  $context['finished'] = 1.0;
+}
+
+function ucberkeley_website_sleep3($seconds, &$context) {
+  $context['message'] = t('Installing Open Berkeley...');
+  sleep($seconds);
+  $context['finished'] = 1.0;
+}
+
+function ucberkeley_website_new_openberkeley_site_batch_finished($success, $results, $operations) {
+  if ($success) {
+    // Here we could do something meaningful with the results.
+    // We just display the number of nodes we processed...
+    //drupal_set_message(t('Spin up of site complete.'));
+    //drupal_set_message(implode("<br />", $results));
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    drupal_set_message(t('An error occurred while processing @operation with arguments : @args', array('@operation' => $error_operation[0], '@args' => print_r($error_operation[0], TRUE))));
+  }
+
+}
+
 function ucberkeley_website_terminus_auth_check() {
-  $terminus_auth_whoami_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus auth whoami";
+  $terminus_auth_whoami_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b auth whoami";
   $output = system($terminus_auth_whoami_cmd, $return);
   //drupal_set_message("Login Check: Return = $return. Output = $output");
   // return will be 0 if you are not logged in, so check output
@@ -506,7 +615,7 @@ function ucberkeley_website_terminus_auth_check() {
 function ucberkeley_website_terminus_authenticate() {
   //TODO: poss to use custom server variables yet?
   global $conf, $export_terminus_cache;
-  $terminus_authenticate_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . sprintf("/terminus auth login %s --password='%s'", $conf['ut'], $conf['pt']);
+  $terminus_authenticate_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . sprintf("/terminus-034b auth login %s --password='%s'", $conf['ut'], $conf['pt']);
   exec($terminus_authenticate_cmd, $output, $return);
   $output = implode("\n", $output);
   //TODO: Make these next two watchdog
@@ -515,12 +624,12 @@ function ucberkeley_website_terminus_authenticate() {
     drupal_set_message("Authenticating: Failure (return=$return) output=" . $output, "error");
     return FALSE;
   }
-  drupal_set_message("Authenticating: Success.");
+  //drupal_set_message("Authenticating: Success.");
 }
 
 function ucberkeley_website_terminus_site_info() {
   global $export_terminus_cache;
-  $terminus_site_info_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus site info --site=ob7-fresh-012015-bw-02 --nocache";
+  $terminus_site_info_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b site info --site=ob7-fresh-012015-bw-02 --nocache";
   exec($terminus_site_info_cmd, $output, $return);
   $output = implode("\n", $output);
   //$output = system($terminus_site_info_cmd, $return);
@@ -539,14 +648,14 @@ function ucberkeley_website_container_spin_up($form_state) {
   $organization_test_name = 'uc-berkeley-testing';
   $organization_name = 'uc-berkeley';
 
-  $site_name = $form_state['values']['site_name'];
+  $site_name = $form_state['values']['website_info']['site_name'];
 
   // By default associate the site with the "UC Berkeley - Testing" organization
-  $terminus_sites_create_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus sites create --product=$product_uuid --name=$site_name --label=$site_name --org=$organization_test_uuid";
+  $terminus_sites_create_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b sites create --product=$product_uuid --name=$site_name --label=$site_name --org=$organization_test_uuid";
   drupal_set_message($terminus_sites_create_cmd);
   exec($terminus_sites_create_cmd, $output, $return);
   if ($return !== 0) {
-    drupal_set_message("Error creating container:<br />" . implode("<br />", $output), "error");
+    drupal_set_message("Error creating container. ($return) Output:<br />" . implode("<br />", $output), "error");
   }
   unset($output);
   unset($return);
@@ -555,18 +664,18 @@ function ucberkeley_website_container_spin_up($form_state) {
   if (FALSE) {
     // Associate the site with the "UC Berkeley" organization
     // 1/23/15: Temporary procedure: https://wikihub.berkeley.edu/display/drupal/Terminus+v2+CLI#Terminusv2CLI-UsingTerminustocreateanewOpenBerkeley7site
-    $terminus_site_organizations_add_cmd = "terminus site organizations add --site=$site_name --org=$organization_name --nocache";
+    $terminus_site_organizations_add_cmd = "terminus-034b site organizations add --site=$site_name --org=$organization_name --nocache";
     // changing max to 1. i.e. don't try repeatedly.  No longer backgrounding the site create command. Edge cases....
     exec($terminus_site_organizations_add_cmd, $output, $return);
     unset($output);
     unset($return);
 
-    $terminus_site_instrument_cmd = "terminus site instrument --change-to-org=$organization_uuid --site=$site_name --nocache";
+    $terminus_site_instrument_cmd = "terminus-034b site instrument --change-to-org=$organization_uuid --site=$site_name --nocache";
     exec($terminus_site_instrument_cmd, $output, $return);
     unset($output);
     unset($return);
 
-    $terminus_site_organizations_remove_cmd = "terminus site organizations remove --site=$site_name --org=$organization_test_uuid --nocache";
+    $terminus_site_organizations_remove_cmd = "terminus-034b site organizations remove --site=$site_name --org=$organization_test_uuid --nocache";
     exec($terminus_site_organizations_remove_cmd, $output, $return);
     unset($output);
     unset($return);
@@ -579,9 +688,9 @@ function ucberkeley_website_add_team($form_state) {
   $administrators = variable_get('ucberkeley_website_administrators', array());
   foreach (array_keys($administrators) as $email) {
     //0.3.4 -it's broken in this version
-    //$terminus_site_team_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus site team add --site=" . $form_state['values']['site_name'] . " --member=$email --nocache";
-    // requires 0.4-beta
-    $terminus_site_team_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus04b site team add-member --site=" . $form_state['values']['site_name'] . " --member=$email --nocache";
+    //$terminus_site_team_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b site team add --site=" . $form_state['values']['website_info']['site_name'] . " --member=$email --nocache";
+    // requires 0.4-beta or higher
+    $terminus_site_team_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus site team add-member --site=" . $form_state['values']['website_info']['site_name'] . " --member=$email --nocache";
 
     exec($terminus_site_team_cmd, $output, $return);
     drupal_set_message($terminus_site_team_cmd);
@@ -593,50 +702,53 @@ function ucberkeley_website_add_team($form_state) {
 }
 
 function ucberkeley_website_install_ob($form_state) {
-  // The terminus drush wrapper fails: https://github.com/pantheon-systems/cli/issues/141
-  //$terminus_drush_site_install_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus ";
 
+  // The terminus drush site-install.  Must be in SFTP mode. https://github.com/pantheon-systems/cli/issues/141
+  $terminus_site_cmode_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b site connection-mode --site=" . $form_state['values']['website_info']['site_name'] . " --env=dev --set=sftp --nocache";
+  exec($terminus_site_cmode_cmd, $output, $return);
+  drupal_set_message($terminus_site_cmode_cmd);
+  drupal_set_message("Cmode=sftp return=$return output:<br />" . implode("<br />", $output));
+  unset($return);
+  unset($output);
 
-  /* Calling drush here is sketchy and would require aliases download etc
-  $drush_site_install_cmd = "/usr/bin/php /Users/bwood/bin/drush/drush-6.3.0/drush.php --strict=0 @pantheon." . $form_state['values']['site_name'] . ".dev site-install openberkeley --site-mail=bwood+01@berkeley.edu --site-name=\"Spin-up Test\" --account-mail=bwood+01@berkeley.edu --account-name=ucbadmin update_status_module=\"array\(FALSE,FALSE\)\" openberkeley_add_admin_form.cas_name=213108,304629,248324,267087 --account-mail=bwood+01@berkeley.edu";
-  $drush_site_install_cmd = "sites/all/libraries/site-install @pantheon." . $form_state['values']['site_name'] . ".dev 2>&1";
-  drupal_set_message($drush_site_install_cmd);
-  exec($drush_site_install_cmd, $output, $return);
-  drupal_set_message("Site-install return=$return output:<br />" . implode("<br />", $output));
-  */
+  // give the connection mode some time
+  sleep(10);
 
   $administrators = variable_get('ucberkeley_website_administrators', array());
-  drupal_set_message("Installing Open Berkeley");
-  $url = "http://dev-" . $form_state['values']['site_name'] . ".pantheon.berkeley.edu/";
-  $request = "profile=openberkeley&locale=en&op=start&id=1";
-  $request .= "&forms[install_configure_form][site_name]=" . urlencode('Auto Spin-up');
-  $request .= "&forms[install_configure_form][site_mail]=" . urlencode('bwood+01@berkeley.edu');
-  $request .= "&forms[install_configure_form][account][name]=" . urlencode('ucbadmin');
-  $request .= "&forms[install_configure_form][account][mail]=" . urlencode('bwood+01@berkeley.edu');
-  $request .= "&forms[install_configure_form][account][pass]=" . urlencode('t');
-  $request .= "&forms[install_configure_form][update_status_module]=" . urlencode('array(FALSE,FALSE)');
-  $request .= "&forms[openberkeley_add_admin_form][cas_name]=" . urlencode(implode(',', array_values($administrators)));
-  $request .= "&forms[panopoly_theme_selection_form][theme]=" . urlencode('berkeley');
-  $url_request = $url . "install_ucb.php?" . $request;
-  drupal_set_message($url_request);
-  $options = array(
-    //'method' => 'GET',
-    //'data' => $request,
-    //'headers' => array('Content-Type' => 'text/html'),
-    'timeout' => 30 // bumping this to 300 seems to cause an internal server error on Pantheon. Just let it timeout.
-  );
+  $drush_site_install_cmd = "drush -y site-install openberkeley --site-mail=bwood+01@berkeley.edu --site-name=" . $form_state['values']['website_info']['site_name'];
+  $drush_site_install_cmd .= " --account-mail=bwood+01@berkeley.edu --account-name=ucbadmin install_configure_form.update_status_module=\"array\(FALSE,FALSE\)\"";
+  $drush_site_install_cmd .= " openberkeley_add_admin_form.cas_name= " . implode(',', array_values($administrators));
+  $drush_site_install_cmd .= " --account-mail=bwood+01@berkeley.edu";
+  $drush_site_install_cmd .= " --site=" . $form_state['values']['website_info']['site_name'];
+  $terminus_drush_site_install_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b " . $drush_site_install_cmd;
+  drupal_set_message($terminus_drush_site_install_cmd);
+  exec($terminus_drush_site_install_cmd, $output, $return);
+  drupal_set_message("Site-install return=$return output:<br />" . implode("<br />", $output));
+  unset($return);
+  unset($output);
 
+  /*
 
-  $response = drupal_http_request($url_request, $options);
+    // Commit the changes to settings.php
+    $terminus_site_code_commit = ucberkeley_website_export_terminus_cache_dir() . " && " . 'echo "y" |' . TERMINUS_PATH . '/terminus-034b site code commit --message="Install Open Berkeley" --env=dev --site=' . $form_state['values']['website_info']['site_name'];
+    exec($terminus_site_code_commit, $output, $return);
+    drupal_set_message($terminus_site_code_commit);
+    drupal_set_message("Commit return=$return output:<br />" . implode("<br />", $output));
+    unset($return);
+    unset($output);
 
-  //let it time out
-  //if ((isset($response->error)) && (!empty($response->error))) {
-  //  drupal_set_message("Error (" . $response->code . ") " . $response->error, "error");
-  //}
-
+    // Set connection-mode back to Git
+    $terminus_site_cmode_cmd = ucberkeley_website_export_terminus_cache_dir() . " && " . TERMINUS_PATH . "/terminus-034b site connection-mode --site=" . $form_state['values']['website_info']['site_name'] . " --env=dev --set=git --nocache";
+    exec($terminus_site_cmode_cmd, $output, $return);
+    drupal_set_message($terminus_site_cmode_cmd);
+    drupal_set_message("Cmode=git return=$return output:<br />" . implode("<br />", $output));
+    unset($return);
+    unset($output);
+  */
   // Allow installation to finish
-  sleep(120);
+  //sleep(120);
   // Check the site.
+  $url = "http://dev-" . $form_state['values']['website_info']['site_name'] . ".pantheon.berkeley.edu/";
   $test = drupal_http_request($url);
   if (($test->code == 200) || ($test->code == 301) || ($test->code == 302)) {
     drupal_set_message("Your site is ready at " . l($url, $url, array('attributes' => array('target' => "_new"))));
@@ -649,4 +761,162 @@ function ucberkeley_website_install_ob($form_state) {
 
 }
 
-// deploy to test and live
+/**
+ * Mock functionality for ITLG demo
+ *
+ * Display a list of user sites
+ */
+function ucberkeley_website_demo_mysites() {
+
+  drupal_add_library('system', 'drupal.collapse');
+  drupal_set_title("Your sites");
+  $data = array();
+  $submissions = variable_get("ucberkeley_website_submissions", array());
+  krsort($submissions);
+  if (count($submissions) == 0) {
+    return array(
+      '#markup' => "<h3>You don't yet have any Open Berkeley sites</h3><p>To create a site " . l("please see this page", "web-hosting/get-open-berkeley") . ".</p>"
+    );
+  }
+  foreach ($submissions as $submission) {
+    $data[] = ucberkeley_website_site_information($submission);
+  }
+  return $data;
+}
+
+function ucberkeley_website_site_information($submission, $title = TRUE, $fieldset = TRUE, $table_headers = TRUE) {
+  $date_format = "Y-m-d g:i:s a";
+  $render = array();
+  $fieldset_children = array();
+  if ($table_headers) {
+    $headers = array(t('Question'), t('Your Answer'));
+  }
+  else {
+    $headers = array();
+  }
+
+  $site_url_no_http = 'test-' . $submission['values']['website_info']['site_short_name'] . '.pantheon.berkeley.edu';
+  $site_url = 'http://' . $site_url_no_http;
+  if ($title) {
+    $site_title = $site_url_no_http;
+  }
+  else {
+    $site_title = "";
+  }
+
+  $render[] = array(
+    '#theme' => 'item_list',
+    '#title' => $site_title,
+    '#items' => array(
+      "<b>Front Page:</b> " . l($site_url, $site_url, array('attributes' => array('target' => "_new"))),
+      "<b>Admin Login:</b> " . l($site_url . "/cas", $site_url . "/cas", array('attributes' => array('target' => "_new"))),
+      "<i>Created Date: " . format_date($submission['values']['requester']['request_timestamp'], "custom", $date_format) . "</i>"
+    )
+  );
+
+  if (!$title) {
+    $render[] = array(
+      '#markup' => "\n\n"
+    );
+  }
+
+  foreach (array_keys($submission['values']) as $form_section) {
+    $sections_flat[$form_section] = _ucberkeley_website_flatten_array($submission['values'][$form_section]);
+    $complete_form_flat[$form_section] = _ucberkeley_website_flatten_array($submission['complete form'][$form_section]);
+  }
+
+  foreach ($sections_flat as $key => $values) {
+
+    $fieldset_children[] = array(
+      '#markup' => "<h3>" . $submission['complete form'][$key]['#title'] . "</h3>\n"
+    );
+    $data = array();
+    foreach ($values as $k => $v) {
+      switch ($k) {
+        case "mou_agree":
+          ($v[0] == 1) ? $v[0] = "Yes" : $v[0] = "No";
+          break;
+        case "request_timestamp":
+          $v[0] = format_date($v[0], "custom", $date_format);
+          break;
+      }
+      foreach ($v as $k2 => $v2) {
+        ($k2 > 0) ? $num = " $k2" : $num = "";
+        switch ($key) {
+          case "people":
+          case "billing_hosting":
+            //TODO: Would be nice not to rely on the machine names here. Update
+            //the titles for these elements
+            $label = ucwords(str_replace("_", " ", $k));
+            break;
+          default:
+            $label = $submission['complete form'][$key][$k]['#title'];
+        }
+        $data[] = array($label . $num, $v2);
+      }
+    }
+    $fieldset_children[] = array(
+      '#theme' => 'table',
+      '#header' => $headers,
+
+      //              '#rows' => array(
+      //                array('row1col1', 'row2col2'),
+      //                array('row2col1', 'row2col2'),
+      //              ),
+
+      '#rows' => $data,
+    );
+  }
+
+  if ($fieldset) {
+    $render[] = array(
+      '#theme' => 'fieldset',
+      '#title' => 'Original Website Request',
+      '#attributes' => array('class' => array('collapsible', 'collapsed')),
+      //'#description' => '<p><em>' . t('Original website request') . '</em></p>',
+      '#children' => drupal_render($fieldset_children),
+    );
+  }
+  else {
+    $render = array_merge($render, $fieldset_children);
+  }
+  return $render;
+}
+
+/**
+ * Flatten multi-dimentional array preserving keys
+ *
+ * @param array $array
+ * @return array
+ */
+function _ucberkeley_website_flatten_array(array $array) {
+  $return = array();
+  array_walk_recursive($array, function ($v, $k) use (&$return) {
+    $return[$k][] = $v;
+  });
+  return $return;
+}
+
+function ucberkeley_website_email_confirm($form_state) {
+  global $user;
+  $account = user_load($user->uid);
+  $params = array(
+    '!site_name' => $form_state['values']['website_info']['site_name'],
+    '!username' => $form_state['values']['requester']['requester_name'],
+    '!site_info' => drupal_render(ucberkeley_website_site_information($form_state, FALSE, FALSE, FALSE)),
+  );
+  $params['!site_info'] = preg_replace("/<\/?tbody>/", "", $params['!site_info']);
+  $params['!site_info'] = str_replace('</td><td>', ': </td><td>', $params['!site_info']);
+  $params['!site_info'] = strip_tags($params['!site_info']);
+  drupal_mail('ucberkeley_website', 'website_creation', $account->mail, user_preferred_language($user), $params);
+  //TODO: should we also send this confirmation email to site_email?
+}
+
+/**
+ * Implements hook_mail().
+ */
+function ucberkeley_website_mail($key, &$message, $params) {
+  $langcode = $message['language']->language;
+  $message['subject'] = t('Your new Open Berkeley Site: !site_name', $params, array('langcode' => $langcode));
+  $message['body'][] = t("Dear !username,\n\nCongratulations! You have created a new Open Berkeley Website.\n\n!site_info", $params, array('langcode' => $langcode));
+}

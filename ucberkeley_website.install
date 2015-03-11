@@ -13,6 +13,10 @@ function ucberkeley_website_install() {
   );
   variable_set('ucberkeley_website_administrators', $administrators);
   drupal_set_message("installing.");
+  //TODO: configure cas redirection
+  //web-hosting/launch-your-pantheon-site
+  //web-hosting/get-open-berkeley
+  //web-hosting/my-sites
 }
 
 /**
@@ -20,4 +24,5 @@ function ucberkeley_website_install() {
  */
 function ucberkeley_website_uninstall() {
   variable_del('ucberkeley_website_administrators');
+  //TODO: clean up CAS redirection
 }
