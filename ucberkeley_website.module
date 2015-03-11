@@ -72,31 +72,31 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#options' => array(t($agree_no), t($agree_yes)),
   );
 
-  $form['requestor'] = array(
+  $form['requester'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#title' => t('Requestor Information'),
+    '#title' => t('requester Information'),
     '#description' => t('These values cannot be changed.'),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
     '#disabled' => TRUE,
   );
-  $form['requestor']['name'] = array(
+  $form['requester']['name'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
-    '#title' => t('Requestor Name'),
+    '#title' => t('Requester Name'),
     '#description' => t(''),
     '#default_value' => $account->name,
     '#disabled' => TRUE,
   );
-  $form['requestor']['email'] = array(
+  $form['requester']['email'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
-    '#title' => t('Requestor Email'),
+    '#title' => t('Requester Email'),
     '#description' => t(''),
     '#default_value' => $account->mail,
   );
-  $form['requestor']['request_timestamp'] = array(
+  $form['requester']['request_timestamp'] = array(
     '#type' => 'hidden',
     '#title' => "Time of request",
     '#value' => "",
@@ -523,7 +523,8 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
     ucberkeley_website_terminus_authenticate();
   }
 
-  $form_state['values']['requestor']['request_timestamp'] = time();
+  $submit_time = time();
+  $form_state['values']['requester']['request_timestamp'] = $submit_time;
 
   if (variable_get('ucberkeley_website_demo', 0) != 1) {
     ucberkeley_website_container_spin_up($form_state);
@@ -532,9 +533,13 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
   else {
     // Exclude unnecessary elements.
     form_state_values_clean($form_state);
-    variable_set('ucberkeley_website_submissions', $form_state);
+    //get past submissions
+    $submissions = variable_get('ucberkeley_website_submissions', array());
+    //add this submission
+    $submissions[$submit_time] = $form_state;
+    variable_set('ucberkeley_website_submissions', $submissions);
     $form_state['redirect'] = "web-hosting/my-sites";
-    ucberkeley_website_email_confirm($form_state);
+    //ucberkeley_website_email_confirm($form_state);
   }
   //logout?
 }
@@ -708,12 +713,20 @@ function ucberkeley_website_install_ob($form_state) {
  * Display a list of user sites
  */
 function ucberkeley_website_demo_mysites() {
-  $submissions = variable_get("ucberkeley_website_submissions", array());
+
+  drupal_add_library('system', 'drupal.collapse');
   drupal_set_title("Your sites");
-  return ucberkeley_website_site_information($submissions);
+  $data = array();
+  $submissions = variable_get("ucberkeley_website_submissions", array());
+  arsort($submissions);
+  foreach ($submissions as $submission) {
+    $data[] = ucberkeley_website_site_information($submission);
+  }
+  return $data;
 }
 
-function ucberkeley_website_site_information($submissions, $title = TRUE, $fieldset = TRUE, $table_headers = TRUE) {
+function ucberkeley_website_site_information($submission, $title = TRUE, $fieldset = TRUE, $table_headers = TRUE) {
+  $date_format = "Y-m-d g:i:s a";
   $render = array();
   $fieldset_children = array();
   if ($table_headers) {
@@ -723,7 +736,7 @@ function ucberkeley_website_site_information($submissions, $title = TRUE, $field
     $headers = array();
   }
 
-  $site_url_no_http = 'test-' . $submissions['values']['website_info']['site_short_name'] . '.pantheon.berkeley.edu';
+  $site_url_no_http = 'test-' . $submission['values']['website_info']['site_short_name'] . '.pantheon.berkeley.edu';
   $site_url = 'http://' . $site_url_no_http;
   if ($title) {
     $site_title = $site_url_no_http;
@@ -731,16 +744,14 @@ function ucberkeley_website_site_information($submissions, $title = TRUE, $field
   else {
     $site_title = "";
   }
-  drupal_add_library('system', 'drupal.collapse');
-
-
 
   $render[] = array(
     '#theme' => 'item_list',
     '#title' => $site_title,
     '#items' => array(
       "<b>Front Page:</b> " . l($site_url, $site_url, array('attributes' => array('target' => "_new"))),
-      "<b>Admin Login:</b> " . l($site_url . "/cas", $site_url . "/cas", array('attributes' => array('target' => "_new")))
+      "<b>Admin Login:</b> " . l($site_url . "/cas", $site_url . "/cas", array('attributes' => array('target' => "_new"))),
+      "<i>Created Date: " . format_date($submission['values']['requester']['request_timestamp'], "custom", $date_format) . "</i>"
     )
   );
 
@@ -750,22 +761,36 @@ function ucberkeley_website_site_information($submissions, $title = TRUE, $field
     );
   }
 
-  foreach ($submissions['values'] as $key => $value) {
+  foreach ($submission['values'] as $key => $value) {
     if (is_array($value)) {
       $fieldset_children[] = array(
-        '#markup' => "<h3>" . $submissions['complete form'][$key]['#title'] . "</h3>\n"
+        '#markup' => "<h3>" . $submission['complete form'][$key]['#title'] . "</h3>\n"
       );
       $data = array();
       foreach ($value as $k => $v) {
-        switch($k) {
+        $data_done = FALSE;
+        switch ($k) {
           case "mou_agree":
-            ($v == 1) ? $v = "Yes" : $v ="No";
+            ($v == 1) ? $v = "Yes" : $v = "No";
             break;
           case "request_timestamp":
-            $v = format_date($v, "custom", "Y-M-D h:i:s a");
+            $v = format_date($v, "custom", $date_format);
+            break;
+          //TODO: Yuck. later make this a recursive function
+          case "site_builders":
+          case "editors":
+          case "contributors":
+            $type = $k;
+            foreach ($submission['values']['people'][$type][$type . '_container'] as $k2 => $v2) {
+              foreach ($v2 as $k3 => $v3)
+              $data[] = array(str_replace('_', ' ', $k3), $v3);
+            }
+            $data_done = TRUE;
             break;
         }
-        $data[] = array($submissions['complete form'][$key][$k]['#title'], $v);
+        if (!$data_done) {
+          $data[] = array($submission['complete form'][$key][$k]['#title'], $v);
+        }
       }
       $fieldset_children[] = array(
         '#theme' => 'table',
