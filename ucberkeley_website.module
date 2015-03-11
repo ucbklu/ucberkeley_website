@@ -542,8 +542,60 @@ function ucberkeley_website_openberkeley_form_submit($form, &$form_state) {
     variable_set('ucberkeley_website_submissions', $submissions);
     $form_state['redirect'] = "web-hosting/my-sites";
     ucberkeley_website_email_confirm($form_state);
+
+    // Batch API to make it look more impressive :-)
+    $operations = array();
+    $operations[] = array('ucberkeley_website_sleep', array(2));
+    $operations[] = array('ucberkeley_website_sleep2', array(1));
+    $operations[] = array('ucberkeley_website_sleep3', array(3));
+
+    $batch = array(
+      'operations' => $operations,
+      'finished' => 'ucberkeley_website_new_openberkeley_site_batch_finished',
+      'title' => t('Spin-up a new Open Berkeley Website'),
+      'init_message' => t('Initiating site creation...'),
+      'progress_message' => t('@percentage% complete...'),
+      'error_message' => t('Splat! We hit an error.')
+    );
+    batch_set($batch);
+
   }
   //logout?
+}
+
+function ucberkeley_website_sleep($seconds, &$context) {
+  $context['message'] = t('Spinning up a Pantheon container...');
+  sleep($seconds);
+  $context['finished'] = 1.0;
+}
+
+function ucberkeley_website_sleep2($x, &$context) {
+  $seconds = 3;
+  $context['message'] = t('Unleashing madd skilz...');
+  exec("sleep $seconds");
+  $context['finished'] = 1.0;
+}
+
+function ucberkeley_website_sleep3($seconds, &$context) {
+  $context['message'] = t('Installing Open Berkeley...');
+  sleep($seconds);
+  $context['finished'] = 1.0;
+}
+
+function ucberkeley_website_new_openberkeley_site_batch_finished($success, $results, $operations) {
+  if ($success) {
+    // Here we could do something meaningful with the results.
+    // We just display the number of nodes we processed...
+    //drupal_set_message(t('Spin up of site complete.'));
+    //drupal_set_message(implode("<br />", $results));
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    drupal_set_message(t('An error occurred while processing @operation with arguments : @args', array('@operation' => $error_operation[0], '@args' => print_r($error_operation[0], TRUE))));
+  }
+
 }
 
 function ucberkeley_website_terminus_auth_check() {
