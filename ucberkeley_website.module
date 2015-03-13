@@ -148,6 +148,12 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#description' => t('See the <a href="@href1"> Technology@Berkeley</a>, website for an example of an IST website.', array('@href1' => 'http://technology.berkeley.edu',))
   );  
 
+  $form['sponsor']['ets'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Educational Technology Services'),
+    '#description' => t('Check this box for the standard ETS configuration.')
+  );    
+
   // *** Website Information ***
 
   $form['website_info'] = array(
