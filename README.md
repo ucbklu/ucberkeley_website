@@ -30,7 +30,7 @@ web-hosting/my-sites
 ### Install Form Save and Restore plugin on Chrome
 [Form Save and Restore](https://chrome.google.com/webstore/detail/form-save-and-restore/jknhanfpdjpnkfjjkpofcpegcbhpigcd?hl=en-US)
 
-### Ensure that "demo mode" is enabled. (ucberkeley_website_demo == 1)
+### Ensure that "demo mode" is enabled.
 ```
 [bwood@mbp ~]$ drush @ob7 vget ucberkeley_website_demo
 ucberkeley_website_demo: '1'
