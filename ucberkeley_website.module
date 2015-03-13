@@ -249,7 +249,7 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#type' => 'fieldset',
     '#tree' => TRUE,
     '#title' => t('Site Builders'),
-    '#description' => t("Site Builders can edit and create content, manage menus and categories, add and edit redirects, change page layouts and use panels, delete content and block users, and more. This role is the most advanced role available on Open Berkeley sites. Please ensure that anyone with Site Builder role attends a " . l(t("Site Builder training"), "https://wikihub.berkeley.edu/display/drupal/Training") . ".<p>Please add the person who will serve as this website's initial primary Site Builder. If this person has not yet attended a Site Builder training, please make sure the individual does so before starting work on your website. This Site Builder may add additional users to your website at any time. Any additional Site Builders should also attend trainings.</p>"),
+    '#description' => t("Site Builders can edit and create content, manage menus and categories, add and edit redirects, change page layouts and use panels, delete content and block users, and more. This role is the most advanced role available on Open Berkeley sites. Please ensure that anyone with Site Builder role attends a " . l(t("Site Builder training"), "https://wikihub.berkeley.edu/display/drupal/Training") . ".<p>Please add the person who will serve as this website's initial primary Site Builder. If this person has not yet attended a Site Builder training, please make sure the individual does so before starting work on your website. This Site Builder may add additional users to your website at any time. Any additional Site Builders should also attend trainings.</p>" . "User ID numbers (UIDs) can be found in the " . l(t("Campus Directory "), "http://www.berkeley.edu/directory")),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
   );
@@ -442,29 +442,29 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#title' => t('Billing Contact'),
     '#description' => t(''),
     '#collapsible' => FALSE,
-    '#collapsed' => FALSE,
+    '#collapsed' => FALSE, 
   );
 
   $form['billing_hosting']['billing_contact']['name'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
-    '#title' => t('Billing Contact Name'),
+    '#title' => t('Billing Contact Name (Required)'),
     '#description' => t(''),
     '#default_value' => "",
     '#prefix' => '<div class="container-inline">',
     '#size' => 25,
-
+    '#required' => TRUE,
   );
 
   $form['billing_hosting']['billing_contact']['email'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
-    '#title' => t('Billing Contact Email'),
+    '#title' => t('Billing Contact Email (Required)'),
     '#description' => t(''),
     '#default_value' => "",
     '#suffix' => '</div>',
     '#size' => 25,
-
+    '#required' => TRUE,  
   );
 
   $form['billing_hosting']['hosting_plan'] = array(
@@ -487,7 +487,7 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#options' => array("Personal Plan ($20/month)", "Professional Plan ($75/month)", "Business Plan ($300/month)"),
   );
   $form['billing_hosting']['hosting_plan']['note_markup'] = array(
-    '#markup' => '<div>' . "Note: If the Enterprise Plan is desired, please contact Pantheon to determine scope and pricing." . '</div>',
+    '#markup' => '<div>Note: If the Enterprise Plan is desired, please contact ' . l(t("IST Drupal"), "mailto:ist-drupal@berkeley.edu") . ' and provide details about what you are looking to do.</div>',
   );
 
 
