@@ -145,7 +145,7 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
   $form['sponsor']['ist'] = array(
     '#type' => 'checkbox',
     '#title' => t('Information Services and Technology'),
-    '#description' => t('See the <a href="@href1"> Technology@Berkeley</a>, website for an example of an IST website.', array('@href1' => 'http://technology.berkeley.edu',))
+    '#description' => t('See the <a href="@href1"> Technology@Berkeley</a>, website for the Office of the CIO website.', array('@href1' => 'http://technology.berkeley.edu',))
   );  
 
   $form['sponsor']['ets'] = array(
