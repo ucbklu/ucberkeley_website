@@ -52,6 +52,33 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
   $agree_yes = "I agree";
   $agree_no = "I do not agree";
 
+  // *** Temporary styling for the form in lieu of using theme functions or stylesheet ***
+
+  //Set options for drupal_add_css (http://api.drupal.org/api/drupal/includes%21common.inc/function/drupal_add_css/7)
+  $options = array(
+    'type'  => 'inline',
+    'group' => CSS_DEFAULT,
+  );  
+    
+  // Make fieldset legends more visible 
+  $css = ".fieldset-legend {font-weight: bold;}";
+  drupal_add_css($css, $options);
+
+  // Add spacing between fieldsets
+  $css = ".form-wrapper {margin: 5px 2px;}";
+  drupal_add_css($css, $options);  
+
+  // Add spacing around fieldset descriptions
+  $css = ".fieldset-description {padding: 5px 0;}";
+  drupal_add_css($css, $options);  
+
+  // Adjust default form item spacing within fieldsets
+  $css = ".fieldset-wrapper .form-item {margin: 1em 0;}";
+  drupal_add_css($css, $options);    
+
+
+  // *** MOU ***
+
   $form['mou'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
@@ -61,7 +88,7 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#collapsed' => FALSE,
   );
   $form['mou']['mou_link'] = array(
-    '#markup' => '<br /><div><strong>' . l(t("Read our Memorandum of Understanding (MOU)"), "web-hosting/MOU-TOS/managed", array('attributes' => array('target' => "_new"))) . '</strong>.</div>'
+    '#markup' => '<div>Please review our <strong>' . l(t("Memorandum of Understanding (MOU)"), "web-hosting/MOU-TOS/managed") . '</strong>.</div>'
   );
   $form['mou']['mou_agree'] = array(
     '#type' => 'radios',
@@ -71,6 +98,8 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#default_value' => 0,
     '#options' => array(t($agree_no), t($agree_yes)),
   );
+
+  // *** Requester ***
 
   $form['requester'] = array(
     '#type' => 'fieldset',
@@ -102,6 +131,31 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#value' => "",
   );
 
+  // *** Organization Sponsors ***
+
+  $form['sponsor'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Organization Sponsor'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+    '#description' => t('If your website will be under one of the following organization sponsors, please check the appropriate box.'),    
+  );
+
+  $form['sponsor']['ist'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Information Services and Technology'),
+    '#description' => t('See the <a href="@href1"> Technology@Berkeley</a>, website for the Office of the CIO website.', array('@href1' => 'http://technology.berkeley.edu',))
+  );  
+
+  $form['sponsor']['ets'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Educational Technology Services'),
+    '#description' => t('Check this box for the standard ETS configuration.')
+  );    
+
+  // *** Website Information ***
+
   $form['website_info'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
@@ -112,7 +166,7 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
   );
   $form['website_info']['site_name'] = array(
     '#type' => 'textfield',
-    '#title' => t('Site Name'),
+    '#title' => t('Site Name (Required)'),
     '#description' => "",
     '#size' => 60,
     '#maxlength' => 128,
@@ -121,22 +175,22 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
   $form['website_info']['site_short_name'] = array(
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#title' => t('Site Short Name'),
+    '#title' => t('Site Short Name (Required)'),
     '#description' => t('This name should contain only lower case letters, numbers and dashes. (Spaces are not allowed.) This will be used in the url of the test version of your site. For example your Site Name might be "My Very Important Site" but you may want your Site Short Name to be "my-site".'),
     '#default_value' => "",
   );
   $form['website_info']['live_url'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
-    '#title' => t('Anticipated Live URL'),
+    '#title' => t('Anticipated Live URL (Example: my-site.berkeley.edu)'),
     '#description' => t(''),
     '#default_value' => "",
   );
   $form['website_info']['site_email'] = array(
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#title' => t('Site Email'),
-    '#description' => t('Preferred: Departmental or other generic email address'),
+    '#title' => t('Site Email (Required)'),
+    '#description' => t('Please use a <a href="@href1">bConnected Departmental Domain</a>, also known as a Special Purpose Account (SPA)', array('@href1' => 'https://calmail.berkeley.edu/docs/domainlist.html',)),
     '#default_value' => "",
   );
   $form['website_info']['parent_org'] = array(
@@ -146,6 +200,9 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#description' => t(''),
     '#default_value' => "",
   );
+
+  // *** People ***
+
   $form['people'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
@@ -163,26 +220,27 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
     '#collapsed' => FALSE,
   );
   $form['people']['functional_owner']['functional_owner_markup'] = array(
-    '#markup' => '<div>' . "The functional owner is the primary decision-maker for your website. This section is optional if the Functional Site
-Owner is the same person who will be listed as the primary Site Builder (see below)." . '</div>',
+    '#markup' => '<div>' . "The functional owner is the primary decision-maker for your website." . '</div>',
   );
   $form['people']['functional_owner']['functional_owner_name'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
-    '#title' => t('Name'),
+    '#title' => t('Name (Required)'),
     '#description' => t(''),
     '#default_value' => "",
     '#prefix' => '<div class="container-inline">',
     '#size' => 25,
+    '#required' => TRUE,    
   );
   $form['people']['functional_owner']['functional_owner_email'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
-    '#title' => t('Email'),
+    '#title' => t('Email (Required)'),
     '#description' => t(''),
     '#default_value' => "",
     '#size' => 25,
     '#suffix' => '</div>',
+    '#required' => TRUE,    
   );
 
   // Increment the counter for "add another" fields
@@ -197,7 +255,7 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#type' => 'fieldset',
     '#tree' => TRUE,
     '#title' => t('Site Builders'),
-    '#description' => t("Site Builders can edit and create content, manage menus and categories, add and edit redirects, change page layouts and use panels, and more. This role is the most advanced role available on Open Berkeley sites. Please ensure that anyone with Site Builder role attends a " . l(t("Site Builder training"), "https://wikihub.berkeley.edu/display/drupal/Training") . ".<p>Please add the person who will serve as this website's initial primary Site Builder. If this person has not yet attended a Site Builder training, they should have plans to do so before starting work on your website. This Site Builder may add additional users to your website at any time. Any additional Site Builders should also attend trainings.</p>"),
+    '#description' => t("Site Builders can edit and create content, manage menus and categories, add and edit redirects, change page layouts and use panels, delete content and block users, and more. This role is the most advanced role available on Open Berkeley sites. Please ensure that anyone with Site Builder role attends a " . l(t("Site Builder training"), "https://wikihub.berkeley.edu/display/drupal/Training") . ".<p>Please add the person who will serve as this website's initial primary Site Builder. If this person has not yet attended a Site Builder training, please make sure the individual does so before starting work on your website. This Site Builder may add additional users to your website at any time. Any additional Site Builders should also attend trainings.</p>" . "User ID numbers (UIDs) can be found in the " . l(t("Campus Directory "), "http://www.berkeley.edu/directory")),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
   );
@@ -221,23 +279,27 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
       $form['people']['site_builders']['site_builders_container'][$i]['site_builder_name'] = array(
         '#type' => 'textfield',
         '#required' => FALSE,
-        '#title' => t('Name'),
+        '#title' => t('Name (Required)'),
         '#description' => t(''),
         '#default_value' => "",
         '#prefix' => '<div class="container-inline">',
         '#size' => 25,
+        '#required' => TRUE,         
       );
       $form['people']['site_builders']['site_builders_container'][$i]['site_builder_uid'] = array(
         '#type' => 'textfield',
         '#required' => FALSE,
-        '#title' => t('UID'),
+        '#title' => t('UID (Required)'),
         '#description' => t(''),
         '#default_value' => "",
         '#size' => 25,
         '#suffix' => '</div>',
+        '#required' => TRUE, 
       );
     }
   }
+  /* Remove ability to add Site Builders on initial submit */
+  /*
   $form['people']['site_builders']['add_site_builder'] = array(
     '#type' => 'button',
     '#value' => t('Add another Site Builder'),
@@ -249,6 +311,7 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#limit_validation_errors' => array(), // No elements will be validated
     '#submit' => array(),
   );
+  */
 
   // *** Editors ***
 
@@ -314,7 +377,7 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
   $form['people']['contributors'] = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#title' => t('contributors'),
+    '#title' => t('Contributors'),
     '#description' => t('Contributors can create and edit their own content, and cannot edit content created by others.'),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
@@ -385,29 +448,29 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#title' => t('Billing Contact'),
     '#description' => t(''),
     '#collapsible' => FALSE,
-    '#collapsed' => FALSE,
+    '#collapsed' => FALSE, 
   );
 
   $form['billing_hosting']['billing_contact']['name'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
-    '#title' => t('Billing Contact Name'),
+    '#title' => t('Billing Contact Name (Required)'),
     '#description' => t(''),
     '#default_value' => "",
     '#prefix' => '<div class="container-inline">',
     '#size' => 25,
-
+    '#required' => TRUE,
   );
 
   $form['billing_hosting']['billing_contact']['email'] = array(
     '#type' => 'textfield',
     '#required' => FALSE,
-    '#title' => t('Billing Contact Email'),
+    '#title' => t('Billing Contact Email (Required)'),
     '#description' => t(''),
     '#default_value' => "",
     '#suffix' => '</div>',
     '#size' => 25,
-
+    '#required' => TRUE,  
   );
 
   $form['billing_hosting']['hosting_plan'] = array(
@@ -430,7 +493,7 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#options' => array("Personal Plan ($20/month)", "Professional Plan ($75/month)", "Business Plan ($300/month)"),
   );
   $form['billing_hosting']['hosting_plan']['note_markup'] = array(
-    '#markup' => '<div>' . "Note: If the Enterprise Plan is desired, please contact Pantheon to determine scope and pricing." . '</div>',
+    '#markup' => '<div>Note: If the Enterprise Plan is desired, please contact ' . l(t("IST Drupal"), "mailto:ist-drupal@berkeley.edu") . ' and provide details about what you are looking to do.</div>',
   );
 
 
@@ -492,7 +555,18 @@ Owner is the same person who will be listed as the primary Site Builder (see bel
     '#default_value' => "",
   );
 
-  $form['submit'] = array(
+  // *** Submission ***
+
+  $form['submission'] = array(
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+    '#title' => t('Submission'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+    '#description' => t('Please review your form entries before submitting.'),    
+  );
+
+  $form['submission']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Start Building Your Website with Open Berkeley!'),
   );
