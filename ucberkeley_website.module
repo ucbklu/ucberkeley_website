@@ -507,36 +507,36 @@ function ucberkeley_website_openberkeley_form($form, &$form_state) {
   );
   $form['billing_hosting']['coa']['business_unit'] = array(
     '#type' => 'textfield',
-    '#required' => FALSE,
-    '#title' => t('Business Unit'),
+    '#required' => TRUE,
+    '#title' => t('Business Unit (Required)'),
     '#description' => t(''),
     '#default_value' => "",
   );
   $form['billing_hosting']['coa']['account'] = array(
     '#type' => 'textfield',
-    '#required' => FALSE,
-    '#title' => t('Account'),
+    '#required' => TRUE,
+    '#title' => t('Account (Required)'),
     '#description' => t(''),
     '#default_value' => "",
   );
   $form['billing_hosting']['coa']['fund'] = array(
     '#type' => 'textfield',
-    '#required' => FALSE,
-    '#title' => t('Fund Code'),
+    '#required' => TRUE,
+    '#title' => t('Fund Code (Required)'),
     '#description' => t(''),
     '#default_value' => "",
   );
   $form['billing_hosting']['coa']['department'] = array(
     '#type' => 'textfield',
-    '#required' => FALSE,
-    '#title' => t('Department (Organization)'),
+    '#required' => TRUE,
+    '#title' => t('Department (Organization) (Required)'),
     '#description' => t(''),
     '#default_value' => "",
   );
   $form['billing_hosting']['coa']['program'] = array(
     '#type' => 'textfield',
-    '#required' => FALSE,
-    '#title' => t('Program'),
+    '#required' => TRUE,
+    '#title' => t('Program (Required)'),
     '#description' => t(''),
     '#default_value' => "",
   );
